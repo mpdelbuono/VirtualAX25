@@ -1,0 +1,90 @@
+;
+; VirtualAx25.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Net
+ClassGuid={4d36e972-e325-11ce-bfc1-08002be10318}
+Provider=%ManufacturerName%
+CatalogFile=VirtualAx25.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+VirtualAx25.sys  = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%VirtualAx25.DeviceDesc%=VirtualAx25_Device, Root\VirtualAx25 ; TODO: edit hw-id
+
+[VirtualAx25_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+VirtualAx25.sys
+
+;-------------- Service installation
+[VirtualAx25_Device.NT.Services]
+AddService = VirtualAx25,%SPSVCINST_ASSOCSERVICE%, VirtualAx25_Service_Inst
+
+; -------------- VirtualAx25 driver install sections
+[VirtualAx25_Service_Inst]
+DisplayName    = %VirtualAx25.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\VirtualAx25.sys
+
+;
+;--- VirtualAx25_Device Coinstaller installation ------
+;
+
+[DestinationDirs]
+VirtualAx25_Device_CoInstaller_CopyFiles = 11
+
+[VirtualAx25_Device.NT.CoInstallers]
+AddReg=VirtualAx25_Device_CoInstaller_AddReg
+CopyFiles=VirtualAx25_Device_CoInstaller_CopyFiles
+
+[VirtualAx25_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[VirtualAx25_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[SourceDisksFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+[VirtualAx25_Device.NT.Wdf]
+KmdfService =  VirtualAx25, VirtualAx25_wdfsect
+[VirtualAx25_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="Matthew Del Buono (KG7UDH)" 
+ClassName="Network adapters" 
+DiskName = "Virtual AX.25 Installer"
+VirtualAx25.DeviceDesc = "Virtual AX.25 Network Interface Device"
+VirtualAx25.SVCDESC = "Virtual AX.25 Service"
