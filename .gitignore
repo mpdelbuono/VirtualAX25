@@ -1,0 +1,22 @@
+# Ignored filetypes
+*.[oa]
+*.sdf
+*.sys
+*.exe
+*.dll
+*.pdb
+*.opensdf
+
+
+# Ignore output directories
+Debug/
+Release/
+x64/Debug/
+x64/Release/
+x86/Debug/
+x86/Release/
+ARM/Debug/
+ARM/Release/
+
+# Ignore configuration directory
+.vs/
