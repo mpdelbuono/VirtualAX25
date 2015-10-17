@@ -67,41 +67,41 @@ private:
      */
     PDRIVER_OBJECT driverObject;
 
-#pragma region Miniport Handler Callbacks
+    #pragma region Miniport Handler Callbacks
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
-    static NDIS_STATUS miniportInitializeEx(
+    static NDIS_STATUS miniportInitializeExCallback(
         _In_ NDIS_HANDLE                    ndisMiniportHandle,
         _In_ NDIS_HANDLE                    miniportDriverContext,
-        _In_ PNDIS_MINIPORT_INIT_PARAMETERS miniportInitParameters);
+        _In_ PNDIS_MINIPORT_INIT_PARAMETERS miniportInitParameters) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
-    static void miniportHaltEx(
+    static void miniportHaltExCallback(
         _In_ NDIS_HANDLE        miniportAdapterContext,
-        _In_ NDIS_HALT_ACTION   haltAction);
+        _In_ NDIS_HALT_ACTION   haltAction) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
-    static NDIS_STATUS miniportPause(
+    static NDIS_STATUS miniportPauseCallback(
         _In_ NDIS_HANDLE                     miniportAdapterContext,
         _In_ PNDIS_MINIPORT_PAUSE_PARAMETERS miniportPauseParameters);
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
-    static NDIS_STATUS miniportRestart(
+    static NDIS_STATUS miniportRestartCallback(
         _In_ NDIS_HANDLE                       miniportAdapterContext,
         _In_ PNDIS_MINIPORT_RESTART_PARAMETERS miniportRestartParameters);
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
-    static NDIS_STATUS miniportOidRequest(
+    static NDIS_STATUS miniportOidRequestCallback(
         _In_ NDIS_HANDLE            miniportAdapterContext,
         _In_ PNDIS_OID_REQUEST      oidRequest);
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
-    static void miniportSendNetBufferLists(
+    static void miniportSendNetBufferListsCallback(
         _In_ NDIS_HANDLE        miniportAdapterContext,
         _In_ PNET_BUFFER_LIST   netBufferList,
         _In_ NDIS_PORT_NUMBER   portNumber,
@@ -109,53 +109,59 @@ private:
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
-    static void miniportReturnNetBufferLists(
+    static void miniportReturnNetBufferListsCallback(
         _In_ NDIS_HANDLE        miniportAdapterContext,
         _In_ PNET_BUFFER_LIST   netBufferLists,
         _In_ ULONG              returnFlags);
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
-    static void miniportCancelSend(
+    static void miniportCancelSendCallback(
         _In_ NDIS_HANDLE miniportAdapterContext,
         _In_ PVOID       cancelId);
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
-    static BOOLEAN miniportCheckForHangEx(
+    static BOOLEAN miniportCheckForHangExCallback(
         _In_ NDIS_HANDLE miniportAdapterContext);
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
-    static NDIS_STATUS miniportResetEx(
+    static NDIS_STATUS miniportResetExCallback(
         _In_  NDIS_HANDLE miniportAdapterContext,
         _Out_ PBOOLEAN    addressingReset);
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
-    static void miniportDevicePnpEventNotify(
+    static void miniportDevicePnpEventNotifyCallback(
         _In_ NDIS_HANDLE            miniportAdapterContext,
         _In_ PNET_DEVICE_PNP_EVENT  netDevicePnpEvent);
 
     _When_(shutdownAction == NdisShutdownPowerOff, _IRQL_requires_(PASSIVE_LEVEL))
     _When_(shutdownAction == NdisShutdownBugCheck, _IRQL_requires_(HIGH_LEVEL))
     _IRQL_requires_same_
-    static void miniportShutdownEx(
+    static void miniportShutdownExCallback(
         _In_ NDIS_HANDLE            miniportAdapterContext,
         _In_ NDIS_SHUTDOWN_ACTION   shutdownAction);
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
-    static void miniportCancelOidRequest(
+    static void miniportCancelOidRequestCallback(
         _In_ NDIS_HANDLE miniportAdapterContext,
         _In_ PVOID       requestId);
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
-    static void miniportDriverUnload(
+    static void miniportDriverUnloadCallback(
         _In_ PDRIVER_OBJECT driverObject);
 
-#pragma endregion
+    #pragma endregion
+    #pragma region Miniport Handler Member Functions
+    _IRQL_requires_(PASSIVE_LEVEL)
+    _IRQL_requires_same_
+    NDIS_STATUS miniportInitializeEx(
+        _In_ PNDIS_MINIPORT_INIT_PARAMETERS initParameters) noexcept;
+    #pragma endregion
 
     /**
      * The tag to use when allocating a Miniport object in the non-pageable pool. In memory

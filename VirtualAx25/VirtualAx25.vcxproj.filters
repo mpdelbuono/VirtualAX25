@@ -48,6 +48,12 @@
     <ClInclude Include="Miniport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AX25Adapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.cpp">
@@ -60,6 +66,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Miniport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AX25Adapter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

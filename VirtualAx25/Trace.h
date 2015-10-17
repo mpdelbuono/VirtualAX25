@@ -39,12 +39,13 @@ Environment:
 
 #define WPP_CONTROL_GUIDS                                              \
     WPP_DEFINE_CONTROL_GUID(                                           \
-        VirtualAx25TraceGuid, (4dc052f5,6090,49be,a0d9,e3c9c8d39642), \
-                                                                            \
+        VirtualAx25TraceGuid, (4dc052f5,6090,49be,a0d9,e3c9c8d39642),  \
+                                                                       \
         WPP_DEFINE_BIT(MYDRIVER_ALL_INFO)                              \
         WPP_DEFINE_BIT(TRACE_DRIVER)                                   \
         WPP_DEFINE_BIT(TRACE_DEVICE)                                   \
         WPP_DEFINE_BIT(TRACE_QUEUE)                                    \
+        WPP_DEFINE_BIT(TRACE_ADAPTER)                                  \
         )                             
 
 #define WPP_FLAG_LEVEL_LOGGER(flag, level)                                  \

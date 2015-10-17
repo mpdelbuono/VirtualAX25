@@ -120,23 +120,25 @@ NDIS_STATUS Miniport::RegisterWithNdis(
     characteristics.MajorDriverVersion = DRIVER_MAJOR_VERSION;
     characteristics.MinorDriverVersion = DRIVER_MINOR_VERSION;
 
+    // No need for a MiniportSetOptions callback
+    characteristics.SetOptionsHandler = nullptr;
+
     // Set the callback functions
-    /*
-    characteristics.InitializeHandlerEx = &miniportInitializeEx;
-    characteristics.HaltHandlerEx = &miniportHaltEx;
-    characteristics.UnloadHandler = &miniportDriverUnload;
-    characteristics.PauseHandler = &miniportPause;
-    characteristics.RestartHandler = &miniportRestart;
-    characteristics.OidRequestHandler = &miniportOidRequest;
-    characteristics.SendNetBufferListsHandler = &miniportSendNetBufferLists;
-    characteristics.ReturnNetBufferListsHandler = &miniportReturnNetBufferLists;
-    characteristics.CancelSendHandler = &miniportCancelSend;
-    characteristics.CheckForHangHandlerEx = &miniportCheckForHangEx;
-    characteristics.ResetHandlerEx = &miniportResetEx;
-    characteristics.DevicePnPEventNotifyHandler = &miniportDevicePnpEventNotify;
-    characteristics.ShutdownHandlerEx = &miniportShutdownEx;
-    characteristics.CancelOidRequestHandler = &miniportCancelOidRequest;
-    */
+    characteristics.InitializeHandlerEx = &miniportInitializeExCallback;
+    characteristics.HaltHandlerEx = &miniportHaltExCallback;
+    characteristics.UnloadHandler = &miniportDriverUnloadCallback;
+    characteristics.PauseHandler = &miniportPauseCallback;
+    characteristics.RestartHandler = &miniportRestartCallback;
+    characteristics.OidRequestHandler = &miniportOidRequestCallback;
+    characteristics.SendNetBufferListsHandler = &miniportSendNetBufferListsCallback;
+    characteristics.ReturnNetBufferListsHandler = &miniportReturnNetBufferListsCallback;
+    characteristics.CancelSendHandler = &miniportCancelSendCallback;
+    characteristics.CheckForHangHandlerEx = &miniportCheckForHangExCallback;
+    characteristics.ResetHandlerEx = &miniportResetExCallback;
+    characteristics.DevicePnPEventNotifyHandler = &miniportDevicePnpEventNotifyCallback;
+    characteristics.ShutdownHandlerEx = &miniportShutdownExCallback;
+    characteristics.CancelOidRequestHandler = &miniportCancelOidRequestCallback;
+
     // Not going to handle direct OID requests
     characteristics.DirectOidRequestHandler = nullptr;
     characteristics.CancelDirectOidRequestHandler = nullptr;
@@ -157,3 +159,49 @@ NDIS_STATUS Miniport::RegisterWithNdis(
 
     return result;
 }
+
+/**
+ * Initializes this miniport, allocating initial buffers as necessary and reading configuration so that
+ * the driver is prepared for operation.
+ * @param ndisMiniportHandle a handle to this miniport driver. This value must be equal to the most recently received
+ * handle during registration with NDIS. 
+ * @param miniportDriverContext the driver context with which to perform the operation. This must be a pointer to a Miniport object.
+ * @param miniportInitParameters the parameters with which to initialize this miniport driver
+ * @returns NDIS_SUCCESS if the initialization was successful, or an error code otherwise
+ */
+_IRQL_requires_(PASSIVE_LEVEL)
+_IRQL_requires_same_ 
+NDIS_STATUS Miniport::miniportInitializeExCallback(_In_ NDIS_HANDLE ndisMiniportHandle, 
+                                                   _In_ NDIS_HANDLE miniportDriverContext, 
+                                                   _In_ PNDIS_MINIPORT_INIT_PARAMETERS miniportInitParameters) noexcept
+{
+    // Convert context to a Miniport object
+    if (miniportDriverContext == nullptr)
+    {
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot initialize miniport: context is nullptr");
+        return STATUS_INVALID_PARAMETER_2;
+    }
+    Miniport* context = static_cast<Miniport*>(miniportDriverContext);
+
+    // Verify the handle is correct. If not, something is seriously wrong.
+    if (ndisMiniportHandle != context->miniportDriverHandle)
+    {
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot initialize miniport: Handle value is inconsistent");
+        return STATUS_INVALID_PARAMETER_1;
+    }
+    return context->miniportInitializeEx(miniportInitParameters);
+}
+
+/**
+* Initializes this miniport, allocating initial buffers as necessary and reading configuration so that
+* the driver is prepared for operation.
+* @param initParameters the parameters with which to initialize this miniport driver
+* @returns NDIS_SUCCESS if the initialization was successful, or an error code otherwise
+*/
+_IRQL_requires_(PASSIVE_LEVEL)
+_IRQL_requires_same_
+NDIS_STATUS Miniport::miniportInitializeEx(_In_ PNDIS_MINIPORT_INIT_PARAMETERS initParameters) noexcept
+{
+}
+
+
