@@ -6,6 +6,7 @@
 *.dll
 *.pdb
 *.opensdf
+*.user
 
 
 # Ignore output directories
