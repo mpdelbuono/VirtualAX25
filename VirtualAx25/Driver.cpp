@@ -42,6 +42,10 @@ Environment:
 #pragma alloc_text (PAGE, VirtualAx25EvtDriverContextCleanup)
 #endif
 
+Miniport *pMiniportObject = nullptr;
+
+
+
 /**
  * Entry point for the driver from the KMDF framework.
  * 
@@ -67,7 +71,7 @@ NDIS_STATUS DriverEntry(
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
 
     // Create the NDIS driver context object, which also will provide the various NDIS handlers
-    Miniport* miniport = Miniport::GetInstance();
+    Miniport* miniport = new Miniport();
     if (miniport == NULL)
     {
         TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Failed to allocate a miniport object! Failing driver entry.");
@@ -126,36 +130,4 @@ Return Value:
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
 
     return status;
-}
-
-extern "C"
-VOID VirtualAx25EvtDriverContextCleanup(
-    _In_ WDFOBJECT DriverObject
-    )
-/*++
-Routine Description:
-
-    Free all the resources allocated in DriverEntry.
-
-Arguments:
-
-    driverObject - handle to a WDF Driver object.
-
-Return Value:
-
-    VOID.
-
---*/
-{
-    UNREFERENCED_PARAMETER(DriverObject);
-
-    PAGED_CODE ();
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
-
-    //
-    // Stop WPP Tracing
-    //
-    WPP_CLEANUP( WdfDriverWdmGetDriverObject( (WDFDRIVER) DriverObject) );
-
 }

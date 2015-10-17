@@ -22,7 +22,6 @@
  */
 #pragma once
 #include "pch.h"
-#include "UniqueNonPageablePointer.h"
 
 /**
  * Provides the NDIS Miniport handler function interface. 
@@ -35,6 +34,21 @@
 class Miniport
 {
 public:
+    Miniport() noexcept;
+
+    _IRQL_requires_max_(DISPATCH_LEVEL)
+    _IRQL_requires_same_
+    _Must_inspect_result_
+    _Success_(size == sizeof(Miniport))
+    _Ret_maybenull_
+    _Result_nullonfailure_
+    void* operator new(
+        _In_range_(sizeof(Miniport), sizeof(Miniport)) size_t size) noexcept;
+
+    _IRQL_requires_max_(DISPATCH_LEVEL)
+    _IRQL_requires_same_
+    void operator delete(
+         _Inout_updates_bytes_opt_(sizeof(Miniport)) void* pointer) noexcept;
 
     _Must_inspect_result_
     _IRQL_requires_(PASSIVE_LEVEL)
@@ -42,22 +56,7 @@ public:
         _In_  PDRIVER_OBJECT driverObject,
         _In_  PUNICODE_STRING registryPath) noexcept;
 
-    _Must_inspect_result_
-    _Ret_maybenull_
-    static Miniport* GetInstance();
-
-    _Must_inspect_result_
-    _Ret_maybenull_
-    static Miniport* TryGetInstance() noexcept;
 private:
-    friend class UniqueNonPageablePointer<Miniport>; // Allow UniqueNonPageablePointer to call the constructor for allocation
-    Miniport() noexcept;
-
-    /**
-     * Singleton instance of this Miniport. The memory will be automatically freed upon shutdown as necessary.
-     */
-    static UniqueNonPageablePointer<Miniport> instance;
-
     /**
      * Handle to this miniport driver as granted by NDIS
      */
@@ -157,6 +156,16 @@ private:
         _In_ PDRIVER_OBJECT driverObject);
 
 #pragma endregion
+
+    /**
+     * The tag to use when allocating a Miniport object in the non-pageable pool. In memory
+     * this should appear as "axMP", little-endian.
+     */
+    static const ULONG MINIPORT_TAG =
+        ('a' << 0 ) |
+        ('x' << 8 ) |
+        ('M' << 16) |
+        ('P' << 24);
 
 };
 

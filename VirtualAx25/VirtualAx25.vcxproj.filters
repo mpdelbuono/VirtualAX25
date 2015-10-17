@@ -48,9 +48,6 @@
     <ClInclude Include="Miniport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UniqueNonPageablePointer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Device.cpp">

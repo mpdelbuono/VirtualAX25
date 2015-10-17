@@ -20,8 +20,6 @@
 #include "Driver.h"
 #include "Miniport.tmh"
 
-UniqueNonPageablePointer<Miniport> Miniport::instance;
-
 /**
  * Constructs a new Miniport object with an invalid NDIS handle and driver object pointer
  */
@@ -33,56 +31,70 @@ Miniport::Miniport() noexcept
 }
 
 /**
-* Gets an instance of the Miniport handler function interface. The pointer returned is a non-owner
-* pointer of the allocated Miniport. The pointer is guaranteed to be valid for the lifetime of the driver
-* and point to memory in non-pageable space.
-*
-* This function can be called at any IRQL if the Miniport driver has already been allocated, but only at
-* APC_LEVEL or lower if the driver might not have been allocated yet. Care must be taken to ensure
-* that the IRQL is appropriate for the given conditions. If executing above APC_LEVEL, then use @seealso TryGetInstance()
-* instead to prevent an allocation if the state is unknown.
-*
-* If allocation fails, nullptr is returned.
-* @returns an instance of the Miniport handler function interface, or nullptr if the system is out of memory
-*/
+ * Allocator function for a Miniport object. This custom allocator always allocates
+ * the object in non-pageable memory.
+ * @param size the size of the allocation. This value must be equal to 
+ * sizeof(Miniport) or nullptr will be returned.
+ * @returns a newly-allocated contiguous block of memory for use as a Miniport object,
+ * allocated in non-pageable memory, or nullptr if the size requested was not equivalent
+ * to the size of a Miniport object.
+ */
+_IRQL_requires_max_(DISPATCH_LEVEL)
+_IRQL_requires_same_
 _Must_inspect_result_
+_Success_(size == sizeof(Miniport))
 _Ret_maybenull_
-Miniport * Miniport::GetInstance()
+_Result_nullonfailure_
+void * Miniport::operator new(
+    _In_range_(sizeof(Miniport), sizeof(Miniport)) size_t size) noexcept
 {
-    // If we haven't yet allocated an instance, do so
-    if (instance.IsNull())
+    // Check that we're asking for a buffer of a correct size
+    if (size != sizeof(Miniport))
     {
-        __try
-        {
-            instance = UniqueNonPageablePointer<Miniport>::Allocate();
-        }
-        __except ((GetExceptionCode() == STATUS_NO_MEMORY) ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
-        {
-            // going to leave the instance as a nullptr; it will be returned as such
-        }
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "Unexpected request to allocate memory for Miniport with incorrect size %d (expected %d)",
+                    static_cast<int>(size), static_cast<int>(sizeof(Miniport)));
+        return nullptr;
     }
 
-    // Return the instance
-    return instance;
-}
+    __try
+    {
+        // Allocate the memory
+        void* memory = ExAllocatePoolWithTagPriority(static_cast<POOL_TYPE>(NonPagedPoolNx | POOL_RAISE_IF_ALLOCATION_FAILURE), 
+                                                     size, 
+                                                     MINIPORT_TAG, 
+                                                     NormalPoolPriority);
+        if (memory == nullptr)
+        {
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "Request to allocate Miniport failed unexpectedly: nullptr returned");
+        }
 
+        return memory;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        // Error occurred while allocating - Log and return nullptr
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "Request to allocate Miniport failed: %!STATUS!", GetExceptionCode());
+        return nullptr;
+    }
+}
 
 /**
-* Gets an instance of the Miniport handler function interface if it has already been allocated. The pointer returned
-* is a non-owner pointer of the allocated Miniport. The pointer is guaranteed to be valid for the lifetime of the driver
-* and point to memory in non-pageable space if it has already been allocated. If the Miniport object has not yet been
-* allocated, then nullptr is returned.
-*
-* This function can be called at any IRQL, but will not allocate memory if the Miniport object has not yet been allocated.
-* If the object needs to be allocated, then call @seealso GetInstance(). However, note that @seealso GetInstance() can only
-* allocate memory if executing at or below APC_LEVEL.
-*/
-_Must_inspect_result_
-_Ret_maybenull_
-Miniport * Miniport::TryGetInstance() noexcept
+ * Deallocates this Miniport object, which was allocated via a call to ExAllocatePoolWithTagPriority.
+ * If nullptr is passed in, this function acts as a no-op.
+ * @param pointer a pointer to a miniport object, or nullptr
+ */
+_IRQL_requires_max_(DISPATCH_LEVEL)
+_IRQL_requires_same_
+void Miniport::operator delete(
+    _Inout_updates_bytes_opt_(sizeof(Miniport)) void* pointer) noexcept
 {
-    return instance;
+    // Only do work if there is a pointer here to operate on - delete nullptr; is always legal
+    if (pointer != nullptr)
+    {
+        ExFreePoolWithTag(pointer, MINIPORT_TAG);
+    }
 }
+
 /**
  * Fills the specified NDIS_MINIPORT_DRIVER_CHARACTERISTICS object with callback functions and then registers 
  * this driver with NDIS.

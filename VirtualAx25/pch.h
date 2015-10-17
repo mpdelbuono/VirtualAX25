@@ -32,6 +32,7 @@ extern "C" {
 
 #include <ntddk.h>
 #include <wdf.h>
+#include <cstddef>
 
 // Because <new> cannot be included because of conflicts with VS's /kernel option,
 // we define global placement new here
