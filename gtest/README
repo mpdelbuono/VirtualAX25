@@ -1,0 +1,3 @@
+This folder contains project files derived from the GoogleTest and GoogleMock frameworks found at https://github.com/google/googletest
+
+The project files are copied here to preserve changes necessary to build along with the Virtual AX.25 project. Only project files should be stored here. The git submodule containing the GoogleTest and GoogleMock code should be used to get the source code being built, which will then be used by these projects. This allows the code to remain up-to-date with the framework repository while allowing VS 2015 projects to be built for it.

@@ -18,6 +18,13 @@ x86/Debug/
 x86/Release/
 ARM/Debug/
 ARM/Release/
+gtest/googletest/x64/
+gtest/googletest/x86/
+gtest/googlemock/x64/
+gtest/googlemock/x86/
+gtest/googletest/VirtualAx25/
+VirtualAx25UnitTests/x64/
+VirtualAx25UnitTests/x86/
 
 # Ignore configuration directory
 .vs/
