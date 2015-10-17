@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="DriverExtendedRules" ToolsVersion="14.0">
+  <Include Path="..\..\..\..\..\..\..\program files (x86)\windows kits\10\codeanalysis\driverminimumrules.ruleset" Action="Default" />
+  <Include Path="nativerecommendedrules.ruleset" Action="Default" />
+  <Rules AnalyzerId="Microsoft.Analyzers.NativeCodeAnalysis" RuleNamespace="Microsoft.Rules.Native">
+    <Rule Id="C26105" Action="Warning" />
+    <Rule Id="C26130" Action="Warning" />
+    <Rule Id="C26135" Action="Warning" />
+    <Rule Id="C28105" Action="Warning" />
+    <Rule Id="C28199" Action="Warning" />
+    <Rule Id="C28204" Action="Error" />
+  </Rules>
+</RuleSet>

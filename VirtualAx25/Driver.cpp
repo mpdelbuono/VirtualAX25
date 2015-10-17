@@ -66,16 +66,16 @@ NDIS_STATUS DriverEntry(
     WPP_INIT_TRACING( driverObject, registryPath );
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
 
-	// Create the NDIS driver context object, which also will provide the various NDIS handlers
-	Miniport* miniport = Miniport::GetInstance();
-	if (miniport == NULL)
-	{
-		TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Failed to allocate a miniport object! Failing driver entry.");
-		return STATUS_NO_MEMORY;
-	}
-	
+    // Create the NDIS driver context object, which also will provide the various NDIS handlers
+    Miniport* miniport = Miniport::GetInstance();
+    if (miniport == NULL)
+    {
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Failed to allocate a miniport object! Failing driver entry.");
+        return STATUS_NO_MEMORY;
+    }
+    
 
-	// Register with NDIS
+    // Register with NDIS
     NDIS_STATUS result = miniport->RegisterWithNdis(driverObject, registryPath);
     if (NT_SUCCESS(result) == false)
     {

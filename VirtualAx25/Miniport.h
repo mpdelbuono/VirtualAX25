@@ -42,20 +42,21 @@ public:
         _In_  PDRIVER_OBJECT driverObject,
         _In_  PUNICODE_STRING registryPath) noexcept;
 
-	_Must_inspect_result_
-	_Ret_maybenull_
-	static Miniport* GetInstance();
+    _Must_inspect_result_
+    _Ret_maybenull_
+    static Miniport* GetInstance();
 
-	_Must_inspect_result_
-	_Ret_maybenull_
-	static Miniport* TryGetInstance() noexcept;
+    _Must_inspect_result_
+    _Ret_maybenull_
+    static Miniport* TryGetInstance() noexcept;
 private:
+    friend class UniqueNonPageablePointer<Miniport>; // Allow UniqueNonPageablePointer to call the constructor for allocation
     Miniport() noexcept;
 
-	/**
-	 * Singleton instance of this Miniport. The memory will be automatically freed upon shutdown as necessary.
-	 */
-	static UniqueNonPageablePointer<Miniport> instance;
+    /**
+     * Singleton instance of this Miniport. The memory will be automatically freed upon shutdown as necessary.
+     */
+    static UniqueNonPageablePointer<Miniport> instance;
 
     /**
      * Handle to this miniport driver as granted by NDIS

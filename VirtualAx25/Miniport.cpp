@@ -18,7 +18,9 @@
 #include "pch.h"
 #include "Miniport.h"
 #include "Driver.h"
-#include "driver.tmh"
+#include "Miniport.tmh"
+
+UniqueNonPageablePointer<Miniport> Miniport::instance;
 
 /**
  * Constructs a new Miniport object with an invalid NDIS handle and driver object pointer
@@ -47,9 +49,9 @@ _Must_inspect_result_
 _Ret_maybenull_
 Miniport * Miniport::GetInstance()
 {
-	// If we haven't yet allocated an instance, do so
-	if (instance.IsNull())
-	{
+    // If we haven't yet allocated an instance, do so
+    if (instance.IsNull())
+    {
         __try
         {
             instance = UniqueNonPageablePointer<Miniport>::Allocate();
@@ -58,10 +60,10 @@ Miniport * Miniport::GetInstance()
         {
             // going to leave the instance as a nullptr; it will be returned as such
         }
-	}
+    }
 
-	// Return the instance
-	return instance;
+    // Return the instance
+    return instance;
 }
 
 
@@ -107,6 +109,7 @@ NDIS_STATUS Miniport::RegisterWithNdis(
     characteristics.MinorDriverVersion = DRIVER_MINOR_VERSION;
 
     // Set the callback functions
+    /*
     characteristics.InitializeHandlerEx = &miniportInitializeEx;
     characteristics.HaltHandlerEx = &miniportHaltEx;
     characteristics.UnloadHandler = &miniportDriverUnload;
@@ -121,12 +124,12 @@ NDIS_STATUS Miniport::RegisterWithNdis(
     characteristics.DevicePnPEventNotifyHandler = &miniportDevicePnpEventNotify;
     characteristics.ShutdownHandlerEx = &miniportShutdownEx;
     characteristics.CancelOidRequestHandler = &miniportCancelOidRequest;
-
+    */
     // Not going to handle direct OID requests
     characteristics.DirectOidRequestHandler = nullptr;
     characteristics.CancelDirectOidRequestHandler = nullptr;
 
-	TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DRIVER, "Calling to NdisMRegisterMiniportDriver");
+    TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DRIVER, "Calling to NdisMRegisterMiniportDriver");
     NDIS_STATUS result = NdisMRegisterMiniportDriver(object, registryPath, this, &characteristics, &miniportDriverHandle);
     if (NT_SUCCESS(result))
     {

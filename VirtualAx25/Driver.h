@@ -34,8 +34,6 @@ Environment:
 #define INITGUID
 #include "pch.h"
 
-#include <ntddk.h>
-#include <wdf.h>
 
 #include "device.h"
 #include "queue.h"

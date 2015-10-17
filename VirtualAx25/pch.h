@@ -30,6 +30,9 @@ extern "C" {
 #pragma warning(pop)
 }
 
+#include <ntddk.h>
+#include <wdf.h>
+
 // Because <new> cannot be included because of conflicts with VS's /kernel option,
 // we define global placement new here
 inline void* operator new(size_t, void* pointer)
