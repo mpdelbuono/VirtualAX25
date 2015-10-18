@@ -15,21 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this software. If not, see <http://www.gnu.org/licenses/>.
 
-/*++
-
-Module Name:
-
-    driver.h
-
-Abstract:
-
-    This file contains the driver definitions.
-
-Environment:
-
-    Kernel-mode Driver Framework
-
---*/
+/**
+ * @file Driver.h
+ * Declares global-level driver functions, including the driver entry point.
+ * @author Matthew P. Del Buono (KG7UDH)
+ */
 
 #define INITGUID
 #include "pch.h"

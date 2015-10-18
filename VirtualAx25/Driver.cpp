@@ -15,21 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this software. If not, see <http://www.gnu.org/licenses/>.
 
-/*++
-
-Module Name:
-
-    driver.c
-
-Abstract:
-
-    This file contains the driver entry points and callbacks.
-
-Environment:
-
-    Kernel-mode Driver Framework
-
---*/
+/**
+ * @file Driver.cpp
+ * Defines the entry point for the driver
+ * @author Matthew P. Del Buono
+ */
 
 #include "pch.h"
 #include "driver.h"

@@ -15,21 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this software. If not, see <http://www.gnu.org/licenses/>.
 
-/*++
-
-Module Name:
-
-    Trace.h
-
-Abstract:
-
-    Header file for the debug tracing related function defintions and macros.
-
-Environment:
-
-    Kernel mode
-
---*/
+/**
+ * @file Trace.h
+ * Defines macros associated with the trace and debugging system built into
+ * the driver. The system being used is the WPP trace system.
+ * @author Matthew P. Del Buono (KG7UDH)
+ */
 
 //
 // Define the tracing flags.

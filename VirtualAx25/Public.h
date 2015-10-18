@@ -15,22 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this software. If not, see <http://www.gnu.org/licenses/>.
 
-/*++
-
-Module Name:
-
-    public.h
-
-Abstract:
-
-    This module contains the common declarations shared by driver
-    and user applications.
-
-Environment:
-
-    user and kernel
-
---*/
+/**
+ * @file Public.h
+ * Defines publicly-accessible constants required for driver interface
+ * applications.
+ * @author Matthew P. Del Buono (KG7UDH)
+ */
 
 //
 // Define an Interface Guid so that app can find the device and talk to it.
