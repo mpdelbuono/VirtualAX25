@@ -129,12 +129,40 @@ private:
     NDIS_OID supportedOids[OID_LIST_LENGTH];
 
     /**
-     * The NDIS attributes associated with this adapter. This structure must be allocated in
+     * Representation of an entity stored in an NDIS_MINIPORT_ADAPTER_ATTRIBUTES object.
+     * That classifier is a union, and so it represents one of several possible types. To
+     * improve type safety, this template class is introduced to allow for accessing it as 
+     * its defined type, but to also get it as an NDIS_MINIPORT_ADAPTER_ATTRIBUTES object 
+     * as necessary.
+     * @tparam T the type of the member
+     * @tparam Member a pointer to the member of the attribute being referenced.
+     * members of NDIS_MINIPORT_ADAPTER_ATTRIBUTES
+     */
+    template <class T, T NDIS_MINIPORT_ADAPTER_ATTRIBUTES::*Member>
+    class AdapterAttributes
+    {
+    public:
+        inline T* operator->() noexcept { return &(attributes.*Member); }
+        inline operator NDIS_MINIPORT_ADAPTER_ATTRIBUTES*() noexcept { return &attributes; }
+    private:
+        NDIS_MINIPORT_ADAPTER_ATTRIBUTES attributes;
+    };
+
+    /**
+     * The NDIS general attributes associated with this adapter. This structure must be allocated in
      * non-pageable memory and live for the duration of the adapter, as NDIS will periodically
      * reference it and does not make its own copy.
      */
-    NDIS_MINIPORT_ADAPTER_ATTRIBUTES attributes;
+    AdapterAttributes<NDIS_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES, &NDIS_MINIPORT_ADAPTER_ATTRIBUTES::GeneralAttributes> generalAttributes;
+
+    /**
+     * The NDIS registration attributes associated with this adapter. This structure must be allocated in
+     * non-pageable memory and live for the duration of the adapter, as NDIS will periodically 
+     * reference it and does not make its own copy.
+     */
+    AdapterAttributes<NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES, &NDIS_MINIPORT_ADAPTER_ATTRIBUTES::RegistrationAttributes> registrationAttributes;
 
     void initializeGeneralAttributes() noexcept;
+    void initializeRegistrationAttributes() noexcept;
 };
 

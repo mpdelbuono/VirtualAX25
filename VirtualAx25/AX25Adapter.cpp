@@ -35,6 +35,7 @@ AX25Adapter::AX25Adapter() noexcept
     ,currentPacketFilterMode(0)
     ,joinedMulticastGroups{0}
 {
+    initializeRegistrationAttributes();
     initializeGeneralAttributes();
 
     NDIS_OID const oidList[] = {
@@ -190,7 +191,23 @@ NDIS_STATUS AX25Adapter::SetMiniportAttributes(_In_ NDIS_HANDLE miniportDriverHa
     }
 
     // Call to NDIS - the attributes should already have been set as part of the state of this object
-    return NdisMSetMiniportAttributes(miniportDriverHandle, &attributes);
+    NDIS_STATUS status = NdisMSetMiniportAttributes(miniportDriverHandle, registrationAttributes);
+    if (NDIS_STATUS_SUCCESS != status)
+    {
+        // Something went wrong - report it and give up
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_ADAPTER, "Failed to set miniport adapter registration attributes: %!STATUS!", status);
+        return status;
+    }
+    status = NdisMSetMiniportAttributes(miniportDriverHandle, generalAttributes);
+    if (NDIS_STATUS_SUCCESS != status)
+    {
+        // Report the error
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_ADAPTER, "Failed to set miniport adapter general attributes: %!STATUS!", status);
+        return status;
+    }
+
+
+    return status;
 }
 
 /**
@@ -200,59 +217,59 @@ NDIS_STATUS AX25Adapter::SetMiniportAttributes(_In_ NDIS_HANDLE miniportDriverHa
 void AX25Adapter::initializeGeneralAttributes() noexcept
 {
     // Fill out the version information
-    attributes.GeneralAttributes.Header.Revision = NDIS_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES_REVISION_2;
-    attributes.GeneralAttributes.Header.Size = NDIS_SIZEOF_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES_REVISION_2;
-    attributes.GeneralAttributes.Header.Type = NDIS_OBJECT_TYPE_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES;
+    generalAttributes->Header.Revision = NDIS_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES_REVISION_2;
+    generalAttributes->Header.Size = NDIS_SIZEOF_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES_REVISION_2;
+    generalAttributes->Header.Type = NDIS_OBJECT_TYPE_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES;
 
     
-    attributes.GeneralAttributes.MediaType = NdisMedium802_3;                         // Pretend that we're an ethernet network
-    attributes.GeneralAttributes.PhysicalMediumType = NdisPhysicalMediumWirelessWan;  // But warn NDIS that we're in a wireless scenario
+    generalAttributes->MediaType = NdisMedium802_3;                         // Pretend that we're an ethernet network
+    generalAttributes->PhysicalMediumType = NdisPhysicalMediumWirelessWan;  // But warn NDIS that we're in a wireless scenario
     
     // Set transmission parameters to something meaningful at 1200 baud, with cap at 9600 baud
-    attributes.GeneralAttributes.MtuSize = DEFAULT_MTU_SIZE_BYTES;
-    attributes.GeneralAttributes.MaxXmitLinkSpeed = MAX_XMIT_BITS_PER_SECOND;
-    attributes.GeneralAttributes.XmitLinkSpeed = DEFAULT_XMIT_BITS_PER_SECOND;
-    attributes.GeneralAttributes.MaxRcvLinkSpeed = MAX_RCV_BITS_PER_SECOND;
-    attributes.GeneralAttributes.RcvLinkSpeed = DEFAULT_RCV_BITS_PER_SECOND;
-    attributes.GeneralAttributes.LookaheadSize = sizeof(inboundBuffer);
+    generalAttributes->MtuSize = DEFAULT_MTU_SIZE_BYTES;
+    generalAttributes->MaxXmitLinkSpeed = MAX_XMIT_BITS_PER_SECOND;
+    generalAttributes->XmitLinkSpeed = DEFAULT_XMIT_BITS_PER_SECOND;
+    generalAttributes->MaxRcvLinkSpeed = MAX_RCV_BITS_PER_SECOND;
+    generalAttributes->RcvLinkSpeed = DEFAULT_RCV_BITS_PER_SECOND;
+    generalAttributes->LookaheadSize = sizeof(inboundBuffer);
 
-    attributes.GeneralAttributes.MediaConnectState = MediaConnectStateDisconnected;   // Start disconnected
-    attributes.GeneralAttributes.MediaDuplexState = MediaDuplexStateHalf;             // A radio link is (almost) always half-duplex
-    attributes.GeneralAttributes.MacOptions =
+    generalAttributes->MediaConnectState = MediaConnectStateDisconnected;   // Start disconnected
+    generalAttributes->MediaDuplexState = MediaDuplexStateHalf;             // A radio link is (almost) always half-duplex
+    generalAttributes->MacOptions =
         NDIS_MAC_OPTION_COPY_LOOKAHEAD_DATA |
         NDIS_MAC_OPTION_TRANSFERS_NOT_PEND |
         NDIS_MAC_OPTION_NO_LOOPBACK |
         NDIS_MAC_OPTION_8021P_PRIORITY |                            // required to be specified
         NDIS_MAC_OPTION_8021Q_VLAN;
-    attributes.GeneralAttributes.SupportedPacketFilters =
+    generalAttributes->SupportedPacketFilters =
         NDIS_PACKET_TYPE_DIRECTED |
         NDIS_PACKET_TYPE_MULTICAST |
         NDIS_PACKET_TYPE_ALL_MULTICAST |
         NDIS_PACKET_TYPE_BROADCAST |
         NDIS_PACKET_TYPE_PROMISCUOUS;
 
-    attributes.GeneralAttributes.MaxMulticastListSize = MAX_MULTICAST_GROUPS;
+    generalAttributes->MaxMulticastListSize = MAX_MULTICAST_GROUPS;
 
     // Copy in the mac address
-    RtlZeroMemory(attributes.GeneralAttributes.CurrentMacAddress, sizeof(attributes.GeneralAttributes.CurrentMacAddress));
-    memcpy(attributes.GeneralAttributes.CurrentMacAddress, &DEFAULT_MAC_ADDRESS, sizeof(DEFAULT_MAC_ADDRESS));
-    RtlZeroMemory(attributes.GeneralAttributes.PermanentMacAddress, sizeof(attributes.GeneralAttributes.PermanentMacAddress));
-    memcpy(attributes.GeneralAttributes.PermanentMacAddress, &DEFAULT_MAC_ADDRESS, sizeof(DEFAULT_MAC_ADDRESS));
+    RtlZeroMemory(generalAttributes->CurrentMacAddress, sizeof(generalAttributes->CurrentMacAddress));
+    memcpy(generalAttributes->CurrentMacAddress, &DEFAULT_MAC_ADDRESS, sizeof(DEFAULT_MAC_ADDRESS));
+    RtlZeroMemory(generalAttributes->PermanentMacAddress, sizeof(generalAttributes->PermanentMacAddress));
+    memcpy(generalAttributes->PermanentMacAddress, &DEFAULT_MAC_ADDRESS, sizeof(DEFAULT_MAC_ADDRESS));
     
-    attributes.GeneralAttributes.RecvScaleCapabilities = nullptr;                     // No support for receive-side scaling
+    generalAttributes->RecvScaleCapabilities = nullptr;                     // No support for receive-side scaling
 
     // Port type configuration
-    attributes.GeneralAttributes.AccessType = NET_IF_ACCESS_BROADCAST;
-    attributes.GeneralAttributes.DirectionType = NET_IF_DIRECTION_SENDRECEIVE;
-    attributes.GeneralAttributes.ConnectionType = NET_IF_CONNECTION_DEDICATED;
-    attributes.GeneralAttributes.IfType = IF_TYPE_ETHERNET_CSMACD;                    // Pretend to be an ethernet device
+    generalAttributes->AccessType = NET_IF_ACCESS_BROADCAST;
+    generalAttributes->DirectionType = NET_IF_DIRECTION_SENDRECEIVE;
+    generalAttributes->ConnectionType = NET_IF_CONNECTION_DEDICATED;
+    generalAttributes->IfType = IF_TYPE_ETHERNET_CSMACD;                    // Pretend to be an ethernet device
                                                                                       // TODO: Evaluate if it would be more appropriate to specify X.25 here
                                                                                       // (AX.25 does not have a corresponding IANA number)
-    attributes.GeneralAttributes.IfConnectorPresent = TRUE;      // Pretend there is a connector. We will be using this property to
+    generalAttributes->IfConnectorPresent = TRUE;      // Pretend there is a connector. We will be using this property to
                                                                  // indicate whether or not we're bound to a KISS/AGWPE port.
 
     // Required to support all statistics
-    attributes.GeneralAttributes.SupportedStatistics =
+    generalAttributes->SupportedStatistics =
         NDIS_STATISTICS_DIRECTED_FRAMES_RCV_SUPPORTED |
         NDIS_STATISTICS_MULTICAST_FRAMES_RCV_SUPPORTED |
         NDIS_STATISTICS_BROADCAST_FRAMES_RCV_SUPPORTED |
@@ -272,12 +289,12 @@ void AX25Adapter::initializeGeneralAttributes() noexcept
         NDIS_STATISTICS_MULTICAST_BYTES_XMIT_SUPPORTED |
         NDIS_STATISTICS_BROADCAST_BYTES_XMIT_SUPPORTED;
 
-    attributes.GeneralAttributes.SupportedPauseFunctions = NdisPauseFunctionsUnsupported;
-    attributes.GeneralAttributes.DataBackFillSize = 0;
-    attributes.GeneralAttributes.ContextBackFillSize = 0;
-    attributes.GeneralAttributes.SupportedOidList = supportedOids;                          
-    attributes.GeneralAttributes.SupportedOidListLength = sizeof(supportedOids);
-    attributes.GeneralAttributes.AutoNegotiationFlags =                                   // Pretend like we have always auto-negotiated all parameters
+    generalAttributes->SupportedPauseFunctions = NdisPauseFunctionsUnsupported;
+    generalAttributes->DataBackFillSize = 0;
+    generalAttributes->ContextBackFillSize = 0;
+    generalAttributes->SupportedOidList = supportedOids;                          
+    generalAttributes->SupportedOidListLength = sizeof(supportedOids);
+    generalAttributes->AutoNegotiationFlags =                                   // Pretend like we have always auto-negotiated all parameters
         NDIS_LINK_STATE_XMIT_LINK_SPEED_AUTO_NEGOTIATED                   |               // since the link will always be the same
         NDIS_LINK_STATE_RCV_LINK_SPEED_AUTO_NEGOTIATED |
         NDIS_LINK_STATE_DUPLEX_AUTO_NEGOTIATED;
@@ -299,5 +316,30 @@ void AX25Adapter::initializeGeneralAttributes() noexcept
     powerManagementCapabilities.MinMagicPacketWakeUp = NdisDeviceStateUnspecified;
     powerManagementCapabilities.MinPatternWakeUp = NdisDeviceStateUnspecified;
     powerManagementCapabilities.MinLinkChangeWakeUp = NdisDeviceStateUnspecified;    
-    attributes.GeneralAttributes.PowerManagementCapabilitiesEx = &powerManagementCapabilities;
+    generalAttributes->PowerManagementCapabilitiesEx = &powerManagementCapabilities;
+}
+
+/**
+ * Initializes the NDIS registration attributes associated with this adapter.
+ */
+void AX25Adapter::initializeRegistrationAttributes() noexcept
+{
+    // Set the header
+    registrationAttributes->Header.Type = NDIS_OBJECT_TYPE_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES;
+    registrationAttributes->Header.Revision = NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES_REVISION_1;
+    registrationAttributes->Header.Size = NDIS_SIZEOF_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES_REVISION_1;
+
+    // We ARE the adapter context, so set that parameter accordingly
+    registrationAttributes->MiniportAdapterContext = this;
+
+    registrationAttributes->AttributeFlags =
+        NDIS_MINIPORT_ATTRIBUTES_NDIS_WDM |            // This is a virtual device, and as such does not require HW allocation
+        NDIS_MINIPORT_ATTRIBUTES_SURPRISE_REMOVE_OK;   // Can safely handle this event, since this is not a real device
+
+    registrationAttributes->CheckForHangTimeInSeconds = 0;  // Use default hang check time, since everything we're doing
+                                                            // should not be slowed by hardware
+
+    // No meaning to an "interface type" here. Just claim it's a "host-specific internal interface".
+    registrationAttributes->InterfaceType = NdisInterfaceInternal;
+
 }
