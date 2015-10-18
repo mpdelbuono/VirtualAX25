@@ -18,7 +18,7 @@ void VS2015Printer::OnTestPartResult(const testing::TestPartResult& test)
             filename = "<unknown source>";
         }
         
-        std::cerr << filename << "(" << test.line_number() << "): error: unit test failure: " << test.message() << std::endl;
+        std::cerr << filename << "(" << test.line_number() << "): error: unit test failure: " << std::endl << test.message() << std::endl;
 
 
         // If a debugger is attached, assist the developer by launching it
