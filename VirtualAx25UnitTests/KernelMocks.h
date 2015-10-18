@@ -124,6 +124,7 @@
         };                                                                              \
         extern functionName##_ArgumentData functionName##_Arguments;                    \
         extern KernelMock::KernelMockReturnType<returnType> functionName##_Result;      \
+        extern int functionName##_CallCount;                                            \
     }
 
 /**
@@ -153,11 +154,13 @@
     static void functionName##MockImpl(const KernelMockData::##functionName##_ArgumentData& args);  \
     KernelMock::KernelMockReturnType<returnType> KernelMockData::##functionName##_Result;           \
     KernelMockData::##functionName##_ArgumentData KernelMockData::##functionName##_Arguments;       \
+    int KernelMockData::##functionName##_CallCount;                                                 \
     namespace KernelMockImpl {                                                                      \
         returnType functionName(argumentList)                                                       \
         {                                                                                           \
             argumentAssignments                                                                     \
             ::functionName##MockImpl(KernelMockData::##functionName##_Arguments);                   \
+            KernelMockData::##functionName##_CallCount++;                                           \
             return KernelMockData::##functionName##_Result.get();                                   \
         }                                                                                           \
     }                                                                                               \

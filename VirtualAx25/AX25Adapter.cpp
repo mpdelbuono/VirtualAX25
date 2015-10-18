@@ -93,7 +93,6 @@ _IRQL_requires_max_(DISPATCH_LEVEL)
 _When_(driverHandle == nullptr, _Raises_SEH_exception_)
 void AX25Adapter::operator delete(_In_opt_ void* pointer, _In_ NDIS_HANDLE driverHandle)
 {
-
     if (pointer != nullptr)
     {
         // Protect from an invalid call
