@@ -35,4 +35,5 @@ TEST(AX25Adapter, ValidAllocations)
     void* const MEMORY_PTR = reinterpret_cast<void*>(0x010203040A0B0C0DULL);
     KernelMockData::NdisAllocateMemoryWithTagPriority_Result = MEMORY_PTR;
     EXPECT_EQ(MEMORY_PTR, new(DRIVER_HANDLE) AX25Adapter);
+    EXPECT_EQ(DRIVER_HANDLE, KernelMockData::NdisAllocateMemoryWithTagPriority_Arguments.NdisHandle);
 }

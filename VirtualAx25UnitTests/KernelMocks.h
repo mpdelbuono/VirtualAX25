@@ -77,14 +77,14 @@
 #define KERNEL_MOCK_LIST_ARGUMENTS_2(type1, var1) type1 var1
 #define KERNEL_MOCK_LIST_ARGUMENTS_0() /* nothing to do */
 
-#define KERNEL_MOCK_ASSIGN_ARGUMENTS_16(function, type1, var1, ...) function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_14, (function, __VA_ARGS__))
-#define KERNEL_MOCK_ASSIGN_ARGUMENTS_14(function, type1, var1, ...) function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_12, (function, __VA_ARGS__))
-#define KERNEL_MOCK_ASSIGN_ARGUMENTS_12(function, type1, var1, ...) function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_10, (function, __VA_ARGS__))
-#define KERNEL_MOCK_ASSIGN_ARGUMENTS_10(function, type1, var1, ...) function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_8, (function, __VA_ARGS__))
-#define KERNEL_MOCK_ASSIGN_ARGUMENTS_8(function, type1, var1, ...) function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_6, (function, __VA_ARGS__))
-#define KERNEL_MOCK_ASSIGN_ARGUMENTS_6(function, type1, var1, ...) function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_4, (function, __VA_ARGS__))
-#define KERNEL_MOCK_ASSIGN_ARGUMENTS_4(function, type1, var1, ...) function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_2, (function, __VA_ARGS__))
-#define KERNEL_MOCK_ASSIGN_ARGUMENTS_2(function, type1, var1, ...) function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_0, (function, __VA_ARGS__))
+#define KERNEL_MOCK_ASSIGN_ARGUMENTS_16(function, type1, var1, ...) KernelMockData::##function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_14, (function, __VA_ARGS__))
+#define KERNEL_MOCK_ASSIGN_ARGUMENTS_14(function, type1, var1, ...) KernelMockData::##function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_12, (function, __VA_ARGS__))
+#define KERNEL_MOCK_ASSIGN_ARGUMENTS_12(function, type1, var1, ...) KernelMockData::##function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_10, (function, __VA_ARGS__))
+#define KERNEL_MOCK_ASSIGN_ARGUMENTS_10(function, type1, var1, ...) KernelMockData::##function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_8, (function, __VA_ARGS__))
+#define KERNEL_MOCK_ASSIGN_ARGUMENTS_8(function, type1, var1, ...) KernelMockData::##function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_6, (function, __VA_ARGS__))
+#define KERNEL_MOCK_ASSIGN_ARGUMENTS_6(function, type1, var1, ...) KernelMockData::##function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_4, (function, __VA_ARGS__))
+#define KERNEL_MOCK_ASSIGN_ARGUMENTS_4(function, type1, var1, ...) KernelMockData::##function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_2, (function, __VA_ARGS__))
+#define KERNEL_MOCK_ASSIGN_ARGUMENTS_2(function, type1, var1, ...) KernelMockData::##function##_Arguments.##var1 = var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ASSIGN_ARGUMENTS_0, (function, __VA_ARGS__))
 #define KERNEL_MOCK_ASSIGN_ARGUMENTS_0(function)  /* nothing to do */
 
 /**
@@ -152,12 +152,12 @@
 #define KERNEL_MOCK_DEF_IMPL(returnType, functionName, argumentList, argumentAssignments)           \
     static void functionName##MockImpl(const KernelMockData::##functionName##_ArgumentData& args);  \
     KernelMock::KernelMockReturnType<returnType> KernelMockData::##functionName##_Result;           \
+    KernelMockData::##functionName##_ArgumentData KernelMockData::##functionName##_Arguments;       \
     namespace KernelMockImpl {                                                                      \
-        static KernelMockData::##functionName##_ArgumentData functionName##_Arguments;              \
         returnType functionName(argumentList)                                                       \
         {                                                                                           \
             argumentAssignments                                                                     \
-            ::functionName##MockImpl(functionName##_Arguments);                                     \
+            ::functionName##MockImpl(KernelMockData::##functionName##_Arguments);                   \
             return KernelMockData::##functionName##_Result.get();                                   \
         }                                                                                           \
     }                                                                                               \
