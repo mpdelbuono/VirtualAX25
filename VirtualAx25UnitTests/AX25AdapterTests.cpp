@@ -36,6 +36,8 @@ TEST(AX25Adapter, ValidAllocations)
     KernelMockData::NdisAllocateMemoryWithTagPriority_Result = MEMORY_PTR;
     EXPECT_EQ(MEMORY_PTR, new(DRIVER_HANDLE) AX25Adapter);
     EXPECT_EQ(DRIVER_HANDLE, KernelMockData::NdisAllocateMemoryWithTagPriority_Arguments.NdisHandle);
+    EXPECT_EQ(sizeof(AX25Adapter), KernelMockData::NdisAllocateMemoryWithTagPriority_Arguments.Length);
+    EXPECT_EQ(EX_POOL_PRIORITY::NormalPoolPriority, KernelMockData::NdisAllocateMemoryWithTagPriority_Arguments.Priority);
 }
 
 TEST(AX25Adapter, DeleteNullptr)
@@ -65,4 +67,5 @@ TEST(AX25Adapter, ValidDeallocation)
     EXPECT_NO_THROW(ptr->operator delete(ptr, DRIVER_HANDLE));
     EXPECT_EQ(1, KernelMockData::NdisFreeMemoryWithTagPriority_CallCount);
     EXPECT_EQ(DRIVER_HANDLE, KernelMockData::NdisFreeMemoryWithTagPriority_Arguments.NdisHandle);
+    EXPECT_EQ(ptr, KernelMockData::NdisFreeMemoryWithTagPriority_Arguments.VirtualAddress);
 }
