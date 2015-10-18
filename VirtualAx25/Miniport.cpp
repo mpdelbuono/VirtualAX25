@@ -27,7 +27,8 @@ Miniport::Miniport() noexcept
     :miniportDriverHandle(NULL)
     ,driverObject(NULL)
 {
-
+    // Zero out all of the adapters; start with none of them used
+    RtlZeroMemory(adapters, sizeof(adapters));
 }
 
 /**
@@ -193,16 +194,31 @@ NDIS_STATUS Miniport::miniportInitializeExCallback(_In_ NDIS_HANDLE ndisMiniport
 }
 
 /**
-* Initializes this miniport, allocating initial buffers as necessary and reading configuration so that
-* the driver is prepared for operation.
-* @param initParameters the parameters with which to initialize this miniport driver
-* @returns NDIS_SUCCESS if the initialization was successful, or an error code otherwise
-*/
+ * Initializes this miniport, allocating initial buffers as necessary and reading configuration so that
+ * the driver is prepared for operation. See <https://msdn.microsoft.com/en-us/library/windows/hardware/ff559392(v=vs.85).aspx>
+ * for a detailed description of the full process of initializing this miniport.
+ * @param initParameters the parameters with which to initialize this miniport driver
+ * @returns NDIS_SUCCESS if the initialization was successful, or an error code otherwise
+ */
 _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_
 NDIS_STATUS Miniport::miniportInitializeEx(_In_ PNDIS_MINIPORT_INIT_PARAMETERS initParameters) noexcept
 {
-    
+    // Figure out where we're going to store the new adapter
+    Adapter* thisAdapter = findFirstMatchingAdapter([](Adapter adapter) { return adapter.inUse == false; });
+    if (thisAdapter == nullptr)
+    {
+        // No space left
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot allocate miniport adapter: all slots are in use");
+        NdisWriteErrorLogEntry(miniportDriverHandle, NDIS_ERROR_CODE_OUT_OF_RESOURCES, 1, static_cast<ULONG>(sizeof(adapters) / sizeof(Adapter)));
+        return NDIS_STATUS_RESOURCES;
+    }
+
+    // Assign the new adapter per the specified interface number
+    thisAdapter->inUse = true;
+    thisAdapter->adapterNumber = initParameters->IfIndex;
+    thisAdapter->adapter = new(miniportDriverHandle) AX25Adapter;
+    thisAdapter->adapter->SetMiniportAttributes(miniportDriverHandle);
 }
 
 

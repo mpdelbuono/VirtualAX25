@@ -47,11 +47,94 @@ public:
     _When_(driverHandle == nullptr, _Raises_SEH_exception_)
     void operator delete(_In_opt_ void* pointer,
                          _In_ NDIS_HANDLE driverHandle) noexcept;
+
+    _IRQL_requires_(PASSIVE_LEVEL)
+    AX25Adapter() noexcept;
+
+    _IRQL_requires_(PASSIVE_LEVEL)
+    _Must_inspect_result_
+    NDIS_STATUS SetMiniportAttributes(_In_ NDIS_HANDLE miniportDriverHandle);
 private:
     /**
      * The tag to use when allocating an AX25Adapter object in the non-pageable pool. In memory
      * this should appear as "axAX", little-endian.
      */
-    static const ULONG AX25_ADAPTER_TAG = AX25_CREATE_TAG("axAX");
+    static constexpr ULONG AX25_ADAPTER_TAG = AX25_CREATE_TAG("axAX");
+
+    static constexpr ULONG DEFAULT_MTU_SIZE_BYTES = 512;        //<! Default MTU for an AX.25 link
+    static constexpr ULONG DEFAULT_XMIT_BITS_PER_SECOND = 1200; //<! Default transmit speed for an AX.25 link on VHF
+    static constexpr ULONG MAX_XMIT_BITS_PER_SECOND = 9600;     //<! Maximum transmit speed for an AX.25 link on VHF
+
+    // The link is bidirectional in nature, using the same modulation typically
+    static constexpr ULONG DEFAULT_RCV_BITS_PER_SECOND = DEFAULT_XMIT_BITS_PER_SECOND;  //<! Default receive speed for an AX.25 link on VHF
+    static constexpr ULONG MAX_RCV_BITS_PER_SECOND = MAX_XMIT_BITS_PER_SECOND;          //<! Maximum receive speed for an AX.25 link on VHF
+
+    static constexpr size_t MAX_MULTICAST_GROUPS = 16;          //<! Maximum number of multicast groups supported simultaneously
+    static constexpr size_t MAC_ADDRESS_LENGTH_BITS = 8 * 7;    //<! Number of bits in an AX.25 address
+
+    /** The default MAC address used to allocate to this adapter */
+    static constexpr unsigned long long DEFAULT_MAC_ADDRESS =   // Set default address to KG7UDH-0 for now
+        (static_cast<unsigned long long>('K') << 0 ) |
+        (static_cast<unsigned long long>('G') << 8 ) |
+        (static_cast<unsigned long long>('7') << 16) |
+        (static_cast<unsigned long long>('U') << 24) |
+        (static_cast<unsigned long long>('D') << 32) | 
+        (static_cast<unsigned long long>('H') << 40) |
+                                       (0ULL  << 48);
+
+    /**
+     * Buffer for storing inbound data (received from the radio)
+     */
+    BYTE inboundBuffer[DEFAULT_MTU_SIZE_BYTES];
+
+    /**
+     * Buffer for storing outbound data (to send to the radio)
+     */
+    BYTE outboundBuffer[DEFAULT_MTU_SIZE_BYTES];
+
+   
+
+
+    /**
+     * The VLAN to which this adapter is assigned. At startup, the VLAN is set to 0. NDIS 
+     * can change this at any time. If it is changed, the adadpter will begin filtering to the
+     * specified VLAN.
+     */
+    int currentVlan;
+
+    /**
+     * The current packet filtering mode of this adapter. At startup, this is set to 0 (no
+     * packets are processed). NDIS will reconfigure the filter mode depending on what is
+     * needed from the adapter. 
+     * @seealso https://msdn.microsoft.com/en-us/library/windows/hardware/ff569575(v=vs.85).aspx
+     */
+    ULONG currentPacketFilterMode;
+
+    /**
+     * Multicast groups that have been joined on this adapter, as MAC addresses. An address of
+     * 0 indicates an unused slot. At startup, this list is initialized to all zeroes. Note that
+     * AX.25 MAC addresses are 56 bits long (6 callsign characters and an SSID) so a 64-bit
+     * integer must be used here.
+     */
+    UINT64 joinedMulticastGroups[MAX_MULTICAST_GROUPS];
+    static_assert(sizeof(UINT64) * 8 >= MAC_ADDRESS_LENGTH_BITS, "joinedMulticastGroups is not large enough to store an AX.25 MAC Address");
+
+    /** The number of supported OIDs in the supportedOids field */
+    static constexpr size_t OID_LIST_LENGTH = 44;
+
+    /**
+     * The OIDs that this AX25 Adapter supports. This is not unique to a given adapter; all adapters
+     * will support the same OIDs. However, it is allocated as part of the AX25Adapter to keep it in non-pageable memory.
+     */
+    NDIS_OID supportedOids[OID_LIST_LENGTH];
+
+    /**
+     * The NDIS attributes associated with this adapter. This structure must be allocated in
+     * non-pageable memory and live for the duration of the adapter, as NDIS will periodically
+     * reference it and does not make its own copy.
+     */
+    NDIS_MINIPORT_ADAPTER_ATTRIBUTES attributes;
+
+    void initializeGeneralAttributes() noexcept;
 };
 

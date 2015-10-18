@@ -22,6 +22,7 @@
  */
 #pragma once
 #include "pch.h"
+#include "AX25Adapter.h"
 
 /**
  * Provides the NDIS Miniport handler function interface. 
@@ -162,6 +163,43 @@ private:
     NDIS_STATUS miniportInitializeEx(
         _In_ PNDIS_MINIPORT_INIT_PARAMETERS initParameters) noexcept;
     #pragma endregion
+
+    /**
+     * Structure which maps adapter objects to their interface numbers. All
+     * adapters should be present in non-paged memory.
+     */
+    struct Adapter
+    {
+        AX25Adapter* adapter;
+        NET_IFINDEX adapterNumber;
+        bool inUse;
+    } adapters[16];
+
+    /**
+     * Finds the first adapter in the adapter list that matches the criterion specified. If
+     * no matching adapter is found, nullptr is returned.
+     * @param criterion a function or function-object which will be called on each adapter in
+     * order. This function should return true for a match, or false otherwise.
+     * @returns the first adapter that matches the criterion specified, or nullptr if no adapter
+     * matches the criterion.
+     */
+    template <class Function>
+    _Ret_maybenull_
+    _Must_inspect_result_
+    inline Adapter* findFirstMatchingAdapter(_In_ Function criterion) noexcept
+    {
+        for (Adapter& adapter : adapters)
+        {
+            if (criterion(adapter))
+            {
+                return &adapter;
+            }
+        }
+
+        // Couldn't find any matching adapter - return nullptr
+        return nullptr;
+    }
+
 
     /**
      * The tag to use when allocating a Miniport object in the non-pageable pool. In memory
