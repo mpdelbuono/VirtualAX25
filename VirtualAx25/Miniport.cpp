@@ -202,6 +202,7 @@ _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_
 NDIS_STATUS Miniport::miniportInitializeEx(_In_ PNDIS_MINIPORT_INIT_PARAMETERS initParameters) noexcept
 {
+    
 }
 
 

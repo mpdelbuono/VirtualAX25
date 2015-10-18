@@ -151,7 +151,7 @@
  */
 #define KERNEL_MOCK_DEF_IMPL(returnType, functionName, argumentList, argumentAssignments)           \
     static void functionName##MockImpl(const KernelMockData::##functionName##_ArgumentData& args);  \
-    static KernelMock::KernelMockReturnType<returnType> KernelMockData::##functionName##_Result;    \
+    KernelMock::KernelMockReturnType<returnType> KernelMockData::##functionName##_Result;           \
     namespace KernelMockImpl {                                                                      \
         static KernelMockData::##functionName##_ArgumentData functionName##_Arguments;              \
         returnType functionName(argumentList)                                                       \

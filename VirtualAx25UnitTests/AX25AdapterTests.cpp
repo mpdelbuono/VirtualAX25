@@ -28,3 +28,11 @@ TEST(AX25Adapter, InvalidAllocations)
 {
     EXPECT_EQ(nullptr, new(nullptr) AX25Adapter);
 }
+
+TEST(AX25Adapter, ValidAllocations)
+{
+    void* const DRIVER_HANDLE = reinterpret_cast<void*>(0x10203040A0B0C0D0ULL);
+    void* const MEMORY_PTR = reinterpret_cast<void*>(0x010203040A0B0C0DULL);
+    KernelMockData::NdisAllocateMemoryWithTagPriority_Result = MEMORY_PTR;
+    EXPECT_EQ(MEMORY_PTR, new(DRIVER_HANDLE) AX25Adapter);
+}
