@@ -39,19 +39,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AX25Adapter.cpp" />
-    <ClCompile Include="Device.cpp" />
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="Miniport.cpp" />
-    <ClCompile Include="Queue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AX25Adapter.h" />
-    <ClInclude Include="Device.h" />
     <ClInclude Include="Driver.h" />
     <ClInclude Include="Miniport.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Public.h" />
-    <ClInclude Include="Queue.h" />
     <ClInclude Include="Trace.h" />
     <ClInclude Include="Utility.h" />
   </ItemGroup>

@@ -35,8 +35,6 @@ Environment:
 #include "pch.h"
 
 
-#include "device.h"
-#include "queue.h"
 #include "trace.h"
 
 EXTERN_C_START
@@ -46,8 +44,6 @@ EXTERN_C_START
 //
 
 extern "C" NDIS_STATUS DriverEntry(_In_ PDRIVER_OBJECT, _In_ PUNICODE_STRING);
-EVT_WDF_DRIVER_DEVICE_ADD VirtualAx25EvtDeviceAdd;
-EVT_WDF_OBJECT_CONTEXT_CLEANUP VirtualAx25EvtDriverContextCleanup;
 
 EXTERN_C_END
 
