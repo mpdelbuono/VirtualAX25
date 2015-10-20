@@ -217,7 +217,7 @@ NDIS_STATUS Miniport::miniportInitializeEx(_In_ PNDIS_MINIPORT_INIT_PARAMETERS i
     // Assign the new adapter per the specified interface number
     thisAdapter->inUse = true;
     thisAdapter->adapterNumber = initParameters->IfIndex;
-    thisAdapter->adapter = new(miniportDriverHandle) AX25Adapter;
+    thisAdapter->adapter = new(miniportDriverHandle) AX25Adapter(miniportDriverHandle);
     thisAdapter->adapter->SetMiniportAttributes(miniportDriverHandle);
 }
 

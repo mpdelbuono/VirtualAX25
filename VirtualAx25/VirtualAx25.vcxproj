@@ -35,9 +35,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="AX25Adapter.cpp" />
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="Miniport.cpp" />

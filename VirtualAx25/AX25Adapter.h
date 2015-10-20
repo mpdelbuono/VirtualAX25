@@ -164,5 +164,26 @@ private:
 
     void initializeGeneralAttributes() noexcept;
     void initializeRegistrationAttributes() noexcept;
+
+    /**
+     * DPC structure which represents the receive action DPC. When a new packet comes in, this DPC
+     * will be used as a callback for processing the received information.
+     */
+    KDPC receiveDpc;
+
+    /**
+     * Callback DPC for received packets. When a new packet comes in, this DPC is scheduled for processing.
+     * @param dpc the KDPC object representing this DPC
+     * @param adapterContext the context associated with this adapter
+     */
+    _IRQL_requires_(DISPATCH_LEVEL)
+    _IRQL_requires_same_
+    static void receiveDpcCallback(_In_ KDPC* dpc, 
+                                   _In_opt_ void* adapterContext, 
+                                   _In_opt_ void* systemArgument1, 
+                                   _In_opt_ void* systemArgument2)
+    {
+
+    }
 };
 

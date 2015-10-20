@@ -90,6 +90,9 @@ AX25Adapter::AX25Adapter() noexcept
 
     // Want to leave these two the same size to simplify communication with NDIS
     static_assert(sizeof(inboundBuffer) == sizeof(outboundBuffer), "inbound and outbound buffers must be same size");
+
+    // Initialize the receive DPC
+    KeInitializeDpc(&receiveDpc, &receiveDpcCallback, this);
 }
 
 /**
