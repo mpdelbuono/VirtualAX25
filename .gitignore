@@ -7,6 +7,8 @@
 *.pdb
 *.opensdf
 *.user
+*.pyc
+googlemock/scripts/generator/cpp/*.pyc
 
 
 # Ignore output directories
@@ -25,6 +27,7 @@ gtest/googlemock/x86/
 gtest/googletest/VirtualAx25/
 VirtualAx25UnitTests/x64/
 VirtualAx25UnitTests/x86/
+Tests/
 
 # Ignore configuration directory
 .vs/

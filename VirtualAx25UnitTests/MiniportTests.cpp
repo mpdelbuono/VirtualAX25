@@ -16,15 +16,17 @@
 // along with this software. If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @file pch.h
- * Precompiled header for the Virtual AX.25 NDIS Driver Unit Tests
- */
-#pragma once
+* @file MiniportTests.cpp
+* Unit tests for the Virtual AX.25 NDIS Driver Miniport class
+* @author Matthew P. Del Buono (KG7UDH)
+*/
 
-#include <tchar.h>
-#include <iostream>
-#include <gtest/gtest.h>
-#include <memory>
+#include "pch.h"
+#include "KernelMocks.h"
+#include "AX25AdapterMock.h"
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+TEST(Miniport, DestroyOnHalt)
+{
+    Mocks::AX25Adapter mockAdapter;
+
+}

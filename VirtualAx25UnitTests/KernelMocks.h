@@ -28,7 +28,9 @@
 
 #pragma once
 
-#define NDIS_HANDLE void*
+typedef void* NDIS_HANDLE;
+typedef unsigned long NDIS_STATUS;
+typedef unsigned long NDIS_OID;
 
 #pragma region Framework Code
 /**
@@ -36,27 +38,27 @@
  */
 #define FORCE_EXPAND(x) x
 
-/**
- * Works around a Visual Studio compiler bug where __VA_ARGS__ will be passed as a single parameter.
- * To call FOO(__VA_ARGS__) with this macro, call PASS_ARGLIST_TO_MACRO(FOO, (__VA_ARGS__))
- * (Note: the extra parentheses around __VA_ARGS__ are required as it is part of the workaround.)
- *
- * For additional info, see http://connect.microsoft.com/VisualStudio/feedback/details/380090/variadic-macro-replacement
- */
+ /**
+  * Works around a Visual Studio compiler bug where __VA_ARGS__ will be passed as a single parameter.
+  * To call FOO(__VA_ARGS__) with this macro, call PASS_ARGLIST_TO_MACRO(FOO, (__VA_ARGS__))
+  * (Note: the extra parentheses around __VA_ARGS__ are required as it is part of the workaround.)
+  *
+  * For additional info, see http://connect.microsoft.com/VisualStudio/feedback/details/380090/variadic-macro-replacement
+  */
 #define PASS_ARGLIST_TO_MACRO(macro, ...) macro __VA_ARGS__
 
- /**
-  * Counts the number of arguments passed in
-  */
+  /**
+   * Counts the number of arguments passed in
+   */
 #define COUNT_ARGS(...) FORCE_EXPAND(COUNT_ARGS_IMPL(0, __VA_ARGS__, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))
 #define COUNT_ARGS_IMPL(arg0, arg16, arg15, arg14, arg13, arg12, arg11, arg10, arg9, arg8, arg7, arg6, arg5, arg4, arg3, arg2, arg1, result, ...) result
 
-/**
- * Enumerates the arguments separated by commas that are specified as variables, per KERNEL_MOCK_DECL
- */
+   /**
+    * Enumerates the arguments separated by commas that are specified as variables, per KERNEL_MOCK_DECL
+    */
 #define KERNEL_MOCK_LIST_ARGUMENTS(...) KERNEL_MOCK_LIST_ARGUMENTS_##COUNT_ARGS(__VA_ARGS__)
 
-// The following macros provide implementation for KERNEL_MOCK_ENUMERATE_ARGUMENTS, KERNEL_MOCK_LIST_ARGUMENTS, and KERNEL_MOCK_ASSIGN_ARGUMENTS
+    // The following macros provide implementation for KERNEL_MOCK_ENUMERATE_ARGUMENTS, KERNEL_MOCK_LIST_ARGUMENTS, and KERNEL_MOCK_ASSIGN_ARGUMENTS
 #define KERNEL_MOCK_ENUMERATE_ARGUMENTS_16(type1, var1, ...) type1 var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ENUMERATE_ARGUMENTS_14, (__VA_ARGS__))
 #define KERNEL_MOCK_ENUMERATE_ARGUMENTS_14(type1, var1, ...) type1 var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ENUMERATE_ARGUMENTS_12, (__VA_ARGS__))
 #define KERNEL_MOCK_ENUMERATE_ARGUMENTS_12(type1, var1, ...) type1 var1; PASS_ARGLIST_TO_MACRO(KERNEL_MOCK_ENUMERATE_ARGUMENTS_10, (__VA_ARGS__))
@@ -125,7 +127,8 @@
         extern functionName##_ArgumentData functionName##_Arguments;                    \
         extern KernelMock::KernelMockReturnType<returnType> functionName##_Result;      \
         extern int functionName##_CallCount;                                            \
-    }
+    }                                                                                   \
+    extern "C" returnType functionName(KERNEL_MOCK_ENUMERATE_LIST(__VA_ARGS__));
 
 /**
  * Implements a mock implementation of the given kernel function which takes the specified arguments.
@@ -155,14 +158,12 @@
     KernelMock::KernelMockReturnType<returnType> KernelMockData::##functionName##_Result;           \
     KernelMockData::##functionName##_ArgumentData KernelMockData::##functionName##_Arguments;       \
     int KernelMockData::##functionName##_CallCount;                                                 \
-    namespace KernelMockImpl {                                                                      \
-        returnType functionName(argumentList)                                                       \
-        {                                                                                           \
-            argumentAssignments                                                                     \
-            ::functionName##MockImpl(KernelMockData::##functionName##_Arguments);                   \
-            KernelMockData::##functionName##_CallCount++;                                           \
-            return KernelMockData::##functionName##_Result.get();                                   \
-        }                                                                                           \
+    returnType functionName(argumentList)                                                           \
+    {                                                                                               \
+        argumentAssignments                                                                         \
+        ::functionName##MockImpl(KernelMockData::##functionName##_Arguments);                       \
+        KernelMockData::##functionName##_CallCount++;                                               \
+        return KernelMockData::##functionName##_Result.get();                                       \
     }                                                                                               \
     static void functionName##MockImpl(const KernelMockData::##functionName##_ArgumentData& args)
                            
@@ -238,12 +239,161 @@ enum EX_POOL_PRIORITY
     HighPoolPrioritySpecialPoolUnderrun = 41
 };
 
+struct NDIS_OBJECT_HEADER
+{
+    unsigned char Type;
+    unsigned char Revision;
+    unsigned short Size;
+};
+
+// Only includes the type we care about - any other type should be a compile error because we shouldn't be using
+enum NDIS_INTERFACE_TYPE { NdisInterfaceInternal };
+
+struct NDIS_MINIPORT_REGISTRATION_ATTRIBUTES
+{
+    NDIS_OBJECT_HEADER Header;
+    NDIS_HANDLE MiniportAdapterContext;
+    unsigned long AttributeFlags;
+    unsigned int CheckForHangTimeInSeconds;
+    NDIS_INTERFACE_TYPE InterfaceType;
+};
+
+// Only include the enumeration values we care about - any other should be a compile error (failed test)
+enum NDIS_MEDIUM { NdisMedium802_3 };
+enum NDIS_PHYSICAL_MEDIUM { NdisPhysicalMediumWirelessWan = 8 };
+enum NDIS_MEDIA_CONNECT_STATE { MediaConnectStateUnknown, MediaConnectStateConnected, MediaConnectStateDisconnected };
+enum NDIS_MEDIA_DUPLEX_STATE { MediaDuplexStateHalf = 1 };
+enum NET_IF_ACCESS_TYPE { NET_IF_ACCESS_BROADCAST = 2 };
+enum NET_IF_DIRECTION_TYPE { NET_IF_DIRECTION_SENDRECEIVE };
+enum NET_IF_CONNECTION_TYPE { NET_IF_CONNECTION_DEDICATED = 1 };
+enum NET_IFTYPE { IF_TYPE_ETHERNET_CSMACD = 6 };
+
+
+
+// Not nececssary right now
+typedef void* PNDIS_PNP_CAPABILITIES;
+typedef void* PNDIS_RECEIVE_SCALE_CAPABILITIES;
+typedef void* PNDIS_PM_CAPABILITIES;
+
+constexpr static int NDIS_MAX_PHYS_ADDRESS_LENGTH = 32;
+
+
+struct NDIS_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES
+{
+    NDIS_OBJECT_HEADER               Header;
+    ULONG                            Flags;
+    NDIS_MEDIUM                      MediaType;
+    NDIS_PHYSICAL_MEDIUM             PhysicalMediumType;
+    ULONG                            MtuSize;
+    ULONG64                          MaxXmitLinkSpeed;
+    ULONG64                          XmitLinkSpeed;
+    ULONG64                          MaxRcvLinkSpeed;
+    ULONG64                          RcvLinkSpeed;
+    NDIS_MEDIA_CONNECT_STATE         MediaConnectState;
+    NDIS_MEDIA_DUPLEX_STATE          MediaDuplexState;
+    ULONG                            LookaheadSize;
+    PNDIS_PNP_CAPABILITIES           PowerManagementCapabilities;
+    ULONG                            MacOptions;
+    ULONG                            SupportedPacketFilters;
+    ULONG                            MaxMulticastListSize;
+    USHORT                           MacAddressLength;
+    UCHAR                            PermanentMacAddress[NDIS_MAX_PHYS_ADDRESS_LENGTH];
+    UCHAR                            CurrentMacAddress[NDIS_MAX_PHYS_ADDRESS_LENGTH];
+    PNDIS_RECEIVE_SCALE_CAPABILITIES RecvScaleCapabilities;
+    NET_IF_ACCESS_TYPE               AccessType;
+    NET_IF_DIRECTION_TYPE            DirectionType;
+    NET_IF_CONNECTION_TYPE           ConnectionType;
+    NET_IFTYPE                       IfType;
+    BOOLEAN                          IfConnectorPresent;
+    ULONG                            SupportedStatistics;
+    ULONG                            SupportedPauseFunctions;
+    ULONG                            DataBackFillSize;
+    ULONG                            ContextBackFillSize;
+    NDIS_OID*                        SupportedOidList;
+    ULONG                            SupportedOidListLength;
+    ULONG                            AutoNegotiationFlags;
+    PNDIS_PM_CAPABILITIES            PowerManagementCapabilitiesEx;
+};
+
+struct NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES
+{
+    NDIS_OBJECT_HEADER  Header;
+    NDIS_HANDLE         MiniportAdapterContext;
+    ULONG               AttributeFlags;
+    UINT                CheckForHangTimeInSeconds;
+    NDIS_INTERFACE_TYPE InterfaceType;
+};
+
+// Don't need these right now - define them as empty. They can be filled in later.
+// Include the header just to comply with the C++ standard and have all elements of the union
+// be consistent with each other. I'm not aware of any implementation that would actually care
+// if the header isn't here, but this guarantees we're in compliance with the standard.
+struct NDIS_MINIPORT_ADD_DEVICE_REGISTRATION_ATTRIBUTES { NDIS_OBJECT_HEADER Header; };
+struct NDIS_MINIPORT_ADAPTER_OFFLOAD_ATTRIBUTES { NDIS_OBJECT_HEADER Header; };
+struct NDIS_MINIPORT_ADAPTER_NATIVE_802_11_ATTRIBUTES { NDIS_OBJECT_HEADER Header; };
+
+union NDIS_MINIPORT_ADAPTER_ATTRIBUTES
+{
+    NDIS_OBJECT_HEADER                               Header;
+    NDIS_MINIPORT_ADD_DEVICE_REGISTRATION_ATTRIBUTES AddDeviceRegistrationAttributes;
+    NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES    RegistrationAttributes;
+    NDIS_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES         GeneralAttributes;
+    NDIS_MINIPORT_ADAPTER_OFFLOAD_ATTRIBUTES         OffloadAttributes;
+    NDIS_MINIPORT_ADAPTER_NATIVE_802_11_ATTRIBUTES   Native_802_11_Attributes;
+
+    // Forces the size to be the same as the the "real" NDIS_MINIPORT_ADAPTER_ATTRIBUTES
+    // object.
+    UCHAR ForcedSize[226];
+};
+typedef NDIS_MINIPORT_ADAPTER_ATTRIBUTES* PNDIS_MINIPORT_ADAPTER_ATTRIBUTES;
+
+struct KDPC {
+    union
+    {
+        unsigned long TargetInfoAsUlong;
+        struct
+        {
+            UCHAR Type;
+            UCHAR Importance;
+            USHORT Number;
+        };
+    };
+
+    SINGLE_LIST_ENTRY DpcListEntry;
+    KAFFINITY ProcessorHistory;
+    PVOID DeferredRoutine;
+    PVOID DeferredContext;
+    PVOID SystemArgument1;
+    //PVOID SystemArgument2;
+    //PVOID DpcData;
+};
+typedef void KDEFERRED_ROUTINE(KDPC*, void*, void*, void*);
+
+// NTSTATUS codes
+typedef DWORD NTSTATUS;
+static constexpr NTSTATUS STATUS_NOT_IMPLEMENTED = 0xC0000002;
+
+
+// Kernel function implementations
 KERNEL_MOCK_DECL(void*, NdisAllocateMemoryWithTagPriority,
                  NDIS_HANDLE, NdisHandle,
                  UINT, Length,
                  ULONG, Tag,
                  EX_POOL_PRIORITY, Priority);
+
 KERNEL_MOCK_DECL(void, NdisFreeMemoryWithTagPriority,
                  NDIS_HANDLE, NdisHandle,
                  void*, VirtualAddress,
-                 ULONG, Tag)
+                 ULONG, Tag);
+
+KERNEL_MOCK_DECL(void, ExRaiseStatus,
+                 NTSTATUS, Status);
+
+KERNEL_MOCK_DECL(NDIS_STATUS, NdisMSetMiniportAttributes,
+                 NDIS_HANDLE, NDisMiniportAdapterHandle,
+                 NDIS_MINIPORT_ADAPTER_ATTRIBUTES*, MiniportAttributes);
+
+KERNEL_MOCK_DECL(void, __imp_KeInitializeDpc,
+                 KDPC*, Dpc,
+                 void*, DeferredRoutine,
+                 void*, DeferredContext);

@@ -30,6 +30,9 @@
     <ClCompile Include="KernelMocks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MiniportTests.cpp">
+      <Filter>Unit Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -39,6 +42,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="KernelMocks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AX25AdapterMock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

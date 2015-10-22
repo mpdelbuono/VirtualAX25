@@ -33,27 +33,27 @@
  */
 class AX25Adapter
 {
+    // Some friendships defined to assist with unit testing without interfering with the class operation
+    friend class AX25AdapterFixture_DeleteNullptr_Test;
+    friend class AX25AdapterFixture_ValidDeallocation_Test;
 public:
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _Must_inspect_result_
     _Success_(size == sizeof(AX25Adapter))
     _Ret_maybenull_
-    _Outptr_result_bytebuffer_(size)
     _Result_nullonfailure_
     void* operator new(_In_ size_t size,
                        _In_ NDIS_HANDLE driverHandle) noexcept;
 
-    _IRQL_requires_max_(DISPATCH_LEVEL)
-    _When_(driverHandle == nullptr, _Raises_SEH_exception_)
-    void operator delete(_In_opt_ void* pointer,
-                         _In_ NDIS_HANDLE driverHandle) noexcept;
-
     _IRQL_requires_(PASSIVE_LEVEL)
-    AX25Adapter() noexcept;
+    AX25Adapter(_In_ NDIS_HANDLE driverHandle) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _Must_inspect_result_
     NDIS_STATUS SetMiniportAttributes(_In_ NDIS_HANDLE miniportDriverHandle);
+
+    _IRQL_requires_max_(DISPATCH_LEVEL)
+    virtual void Destroy() noexcept;
 private:
     /**
      * The tag to use when allocating an AX25Adapter object in the non-pageable pool. In memory
@@ -171,19 +171,18 @@ private:
      */
     KDPC receiveDpc;
 
-    /**
-     * Callback DPC for received packets. When a new packet comes in, this DPC is scheduled for processing.
-     * @param dpc the KDPC object representing this DPC
-     * @param adapterContext the context associated with this adapter
-     */
-    _IRQL_requires_(DISPATCH_LEVEL)
-    _IRQL_requires_same_
-    static void receiveDpcCallback(_In_ KDPC* dpc, 
-                                   _In_opt_ void* adapterContext, 
-                                   _In_opt_ void* systemArgument1, 
-                                   _In_opt_ void* systemArgument2)
-    {
 
-    }
+    static KDEFERRED_ROUTINE receiveDpcCallback;
+
+
+    /**
+     * The NDIS driver handle assigned to this driver, which was supplied during allocation
+     * and construction.
+     */
+    const NDIS_HANDLE driverHandle;
+
+    _IRQL_requires_max_(DISPATCH_LEVEL)
+    void operator delete(_In_opt_ void* pointer) noexcept;
+
 };
 

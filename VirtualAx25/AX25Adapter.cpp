@@ -29,11 +29,15 @@
 
 /**
  * Initializes a new AX25Adapter object to default parameters and state
+ * @param driverHandle the NDIS driver handle with which to allocate
+ * and free resources
  */
-AX25Adapter::AX25Adapter() noexcept
+_IRQL_requires_(PASSIVE_LEVEL)
+AX25Adapter::AX25Adapter(_In_ NDIS_HANDLE driverHandle) noexcept
     :currentVlan(0)
     ,currentPacketFilterMode(0)
     ,joinedMulticastGroups{0}
+    ,driverHandle(driverHandle)
 {
     initializeRegistrationAttributes();
     initializeGeneralAttributes();
@@ -107,7 +111,6 @@ _IRQL_requires_max_(DISPATCH_LEVEL)
 _Must_inspect_result_
 _Success_(size == sizeof(AX25Adapter))
 _Ret_maybenull_
-_Outptr_result_bytebuffer_(size)
 _Result_nullonfailure_
 void* AX25Adapter::operator new(_In_ size_t size,
                                 _In_ NDIS_HANDLE driverHandle) noexcept
@@ -153,25 +156,26 @@ void* AX25Adapter::operator new(_In_ size_t size,
  * a destroyed AX25Adapter object which was allocated via the AX25Adapter::operator new(size_t, NDIS_HANDLE) function.
  * If nullptr is supplied as an argument, this function is a no-op. Otherwise, the memory specified is deallocated.
  * @param pointer a pointer to the destroyed AX25Adapter to deallocate, or nullptr
- * @param driverHandle the driver handle to pass to NDIS during deallocation
  * @throws NTSTATUS STATUS_INVALID_PARAMETER_2 if driverHandle is nullptr
  */
 _IRQL_requires_max_(DISPATCH_LEVEL)
-_When_(driverHandle == nullptr, _Raises_SEH_exception_)
-void AX25Adapter::operator delete(_In_opt_ void* pointer, _In_ NDIS_HANDLE driverHandle)
+void AX25Adapter::operator delete(_In_opt_ void* pointer)
 {
     if (pointer != nullptr)
     {
-        // Protect from an invalid call
-        if (driverHandle == nullptr)
+        AX25Adapter* thisAdapter = reinterpret_cast<AX25Adapter*>(pointer);
+        
+        // This should be impossible, but we should check it rather than blindly accessing memory
+        // The extra check is not going to significantly harm performance - this is not a hotspot by any means
+        if (thisAdapter->driverHandle == nullptr)
         {
             TraceEvents(TRACE_LEVEL_ERROR, TRACE_ADAPTER, "Cannot deallocate AX25Adapter: NDIS driver handle is nullptr");
-            ExRaiseStatus(STATUS_INVALID_PARAMETER_2);
+            // Can't raise an exception here because it would violate IRQL DISPATCH_LEVEL, so we will simply leave an error in the log.
         }
         else
         {
             TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_ADAPTER, "Deallocating AX25Adapter at %p", pointer);
-            NdisFreeMemoryWithTagPriority(driverHandle, pointer, AX25_ADAPTER_TAG);
+            NdisFreeMemoryWithTagPriority(thisAdapter->driverHandle, pointer, AX25_ADAPTER_TAG);
         }
     }
 }
@@ -345,4 +349,38 @@ void AX25Adapter::initializeRegistrationAttributes() noexcept
     // No meaning to an "interface type" here. Just claim it's a "host-specific internal interface".
     registrationAttributes->InterfaceType = NdisInterfaceInternal;
 
+}
+
+/**
+ * Callback DPC for received packets. When a new packet comes in, this DPC is scheduled for processing.
+ * @param dpc the KDPC object representing this DPC
+ * @param adapterContext the context associated with this adapter
+ */
+_Use_decl_annotations_
+void AX25Adapter::receiveDpcCallback(_In_ KDPC* dpc,
+                                     _In_opt_ void* adapterContext,
+                                     _In_opt_ void* systemArgument1,
+                                     _In_opt_ void* systemArgument2)
+{
+    // Normally I would call ExRaiseStatus(STATUS_NOT_IMPLEMENTED) here, but that is illegal
+    // at DISPATCH_LEVEL, so we're just going to issue a bugcheck instead.
+    UNREFERENCED_PARAMETER(dpc);
+    UNREFERENCED_PARAMETER(adapterContext);
+    UNREFERENCED_PARAMETER(systemArgument1);
+    UNREFERENCED_PARAMETER(systemArgument2);
+    KeBugCheckEx(KMODE_EXCEPTION_NOT_HANDLED,
+                 static_cast<ULONG_PTR>(STATUS_NOT_IMPLEMENTED),
+                 reinterpret_cast<ULONG_PTR>(__FUNCTION__),
+                 NULL, NULL);
+}
+
+/**
+ * Destroys and deallocates this object. After calling this function, the object is no longer valid and
+ * points to invalid memory.
+ */
+_IRQL_requires_max_(DISPATCH_LEVEL)
+void AX25Adapter::Destroy() noexcept
+{
+    this->~AX25Adapter();   // doesn't currently do anything interesting, but called for completeness/futureproofing
+    delete this;            // calls to AX25Adapter::operator delete
 }

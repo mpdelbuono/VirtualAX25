@@ -49,6 +49,28 @@ extern "C"
 
     }
 
+    KERNEL_MOCK_DEF(void, ExRaiseStatus,
+                    NTSTATUS, Status)
+    {
+        // Desirable to actually raise the exception in most cases because we can catch that
+        RaiseException(args.Status, 0, 0, NULL);
+    }
+
+    KERNEL_MOCK_DEF(NDIS_STATUS, NdisMSetMiniportAttributes,
+                    NDIS_HANDLE, NDisMiniportAdapterHandle,
+                    NDIS_MINIPORT_ADAPTER_ATTRIBUTES*, MiniportAttributes)
+    {
+
+    }
+    
+    KERNEL_MOCK_DEF(void, __imp_KeInitializeDpc,
+                    KDPC*, Dpc,
+                    void*, DeferredRoutine,
+                    void*, DeferredContext)
+    {
+
+    }
+    
     // This is an actual kernel API, so it's a little weird. We do this raw.
     // Goal is to implement __stdcall for the __imp_ExRaiseStatus function, but
     // __stdcall doesn't follow that naming convention. Fortunately, the calling convention
@@ -62,10 +84,17 @@ extern "C"
         RaiseException(status, 0, 0, NULL);
     }
 
+    // Same kind of problem as __imp_ExRaiseStatus
+    void __imp_KeBugCheckEx(DWORD code,
+                            void* p1, void* p2, void* p3, void* p4)
+    {
+        // Raising an exception is the closest we can do to simulating a blue screen
+        RaiseException(code, 0, 0, NULL);
+    }
+
     // WppAutoLogTrace is a debug-only function that is not of interest to the unit test system.
     // Because it is __cdecl, we can just discard it by linking it to nothing.
     void WppAutoLogTrace() {}
-
 
 
 

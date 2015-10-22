@@ -125,6 +125,7 @@ NDIS_STATUS Miniport::RegisterWithNdis(
     characteristics.SetOptionsHandler = nullptr;
 
     // Set the callback functions
+    /*
     characteristics.InitializeHandlerEx = &miniportInitializeExCallback;
     characteristics.HaltHandlerEx = &miniportHaltExCallback;
     characteristics.UnloadHandler = &miniportDriverUnloadCallback;
@@ -139,7 +140,7 @@ NDIS_STATUS Miniport::RegisterWithNdis(
     characteristics.DevicePnPEventNotifyHandler = &miniportDevicePnpEventNotifyCallback;
     characteristics.ShutdownHandlerEx = &miniportShutdownExCallback;
     characteristics.CancelOidRequestHandler = &miniportCancelOidRequestCallback;
-
+    */
     // Not going to handle direct OID requests
     characteristics.DirectOidRequestHandler = nullptr;
     characteristics.CancelDirectOidRequestHandler = nullptr;
@@ -198,7 +199,7 @@ NDIS_STATUS Miniport::miniportInitializeExCallback(_In_ NDIS_HANDLE ndisMiniport
  * the driver is prepared for operation. See <https://msdn.microsoft.com/en-us/library/windows/hardware/ff559392(v=vs.85).aspx>
  * for a detailed description of the full process of initializing this miniport.
  * @param initParameters the parameters with which to initialize this miniport driver
- * @returns NDIS_SUCCESS if the initialization was successful, or an error code otherwise
+ * @returns NDIS_STATUS_SUCCESS if the initialization was successful, or an error code otherwise
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_
@@ -218,7 +219,31 @@ NDIS_STATUS Miniport::miniportInitializeEx(_In_ PNDIS_MINIPORT_INIT_PARAMETERS i
     thisAdapter->inUse = true;
     thisAdapter->adapterNumber = initParameters->IfIndex;
     thisAdapter->adapter = new(miniportDriverHandle) AX25Adapter(miniportDriverHandle);
-    thisAdapter->adapter->SetMiniportAttributes(miniportDriverHandle);
+
+    if (thisAdapter->adapter == nullptr)
+    {
+        // Something went wrong with allocation - die off
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Failed to allocate an AX25Adapter object");
+        // Assume it was due to lack of memory when logging
+        NdisWriteErrorLogEntry(miniportDriverHandle, NDIS_ERROR_CODE_OUT_OF_RESOURCES, 0);
+        return NDIS_STATUS_RESOURCES;
+    }
+
+    return thisAdapter->adapter->SetMiniportAttributes(miniportDriverHandle);
 }
 
-
+/**
+ * Callback for the Halt operation on an adapter. Provides the adapter context, which is an
+ * AX25Adapter object, which is to be destroyed.
+ * @param miniportAdapterContext the AX25Adapter context object which is to be destroyed
+ * @param haltAction parameters associated with the reason for the halt operation
+ */
+_IRQL_requires_(PASSIVE_LEVEL)
+_IRQL_requires_same_
+void Miniport::miniportHaltExCallback(_In_ NDIS_HANDLE miniportAdapterContext,
+                                      _In_ NDIS_HALT_ACTION haltAction) noexcept
+{
+    UNREFERENCED_PARAMETER(haltAction); // no need for this - we deallocate the same way every time
+    AX25Adapter* thisAdapter = reinterpret_cast<AX25Adapter*>(miniportAdapterContext);
+    thisAdapter->Destroy();
+}

@@ -15,16 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this software. If not, see <http://www.gnu.org/licenses/>.
 
+
 /**
- * @file pch.h
- * Precompiled header for the Virtual AX.25 NDIS Driver Unit Tests
+ * @file AX25AdapterMock.h
+ * Provides a mock implementation of an AX25Adapter object
+ * @author Matthew P. Del Buono (KG7UDH)
  */
+
 #pragma once
 
-#include <tchar.h>
-#include <iostream>
-#include <gtest/gtest.h>
-#include <memory>
+#include "gmock/gmock.h"
+#include "AX25Adapter.h"
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+namespace Mocks
+{
+    /**
+     * Mock implementation of an ::AX25Adapter object
+     */
+    class AX25Adapter : public ::AX25Adapter
+    {
+    public:
+        inline AX25Adapter() noexcept :
+            ::AX25Adapter(nullptr) {}
+
+        // Need to use GMOCK_METHOD0_ here because we need to specify noexcept
+        GMOCK_METHOD0_(, noexcept, , Destroy, void());
+    };
+}

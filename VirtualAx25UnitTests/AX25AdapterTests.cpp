@@ -24,47 +24,54 @@
 #include "KernelMocks.h"
 #include "AX25Adapter.h"
 
-TEST(AX25Adapter, InvalidAllocations)
+class AX25AdapterFixture : public testing::Test
 {
-    EXPECT_EQ(nullptr, new(nullptr) AX25Adapter);
+protected:
+    // Required to use malloc() here so that we don't call the constructor.
+    // Constructor operations are part of the test cases, and a placement new is being called accordingly.
+    AX25AdapterFixture() :
+        memory(malloc(sizeof(AX25Adapter)))
+    {
+        
+    }
+
+    ~AX25AdapterFixture()
+    {
+        free(memory);
+    }
+
+    void* memory;
+    static constexpr void* DRIVER_HANDLE = reinterpret_cast<void*>(0x10203040A0B0C0D0ULL);
+
+
+};
+
+TEST_F(AX25AdapterFixture, InvalidAllocations)
+{
+    EXPECT_EQ(nullptr, new(nullptr) AX25Adapter(DRIVER_HANDLE));
 }
 
-TEST(AX25Adapter, ValidAllocations)
+TEST_F(AX25AdapterFixture, ValidAllocations)
 {
-    void* const DRIVER_HANDLE = reinterpret_cast<void*>(0x10203040A0B0C0D0ULL);
-    void* const MEMORY_PTR = reinterpret_cast<void*>(0x010203040A0B0C0DULL);
-    KernelMockData::NdisAllocateMemoryWithTagPriority_Result = MEMORY_PTR;
-    EXPECT_EQ(MEMORY_PTR, new(DRIVER_HANDLE) AX25Adapter);
+    KernelMockData::NdisAllocateMemoryWithTagPriority_Result = memory;
+    EXPECT_EQ(memory, new(DRIVER_HANDLE) AX25Adapter(DRIVER_HANDLE));
     EXPECT_EQ(DRIVER_HANDLE, KernelMockData::NdisAllocateMemoryWithTagPriority_Arguments.NdisHandle);
     EXPECT_EQ(sizeof(AX25Adapter), KernelMockData::NdisAllocateMemoryWithTagPriority_Arguments.Length);
     EXPECT_EQ(EX_POOL_PRIORITY::NormalPoolPriority, KernelMockData::NdisAllocateMemoryWithTagPriority_Arguments.Priority);
 }
 
-TEST(AX25Adapter, DeleteNullptr)
+TEST_F(AX25AdapterFixture, DeleteNullptr)
 {
     AX25Adapter* ptr = nullptr;
-    void* const DRIVER_HANDLE = reinterpret_cast<void*>(0x10203040A0B0C0D0ULL);
-    EXPECT_NO_THROW(ptr->operator delete(ptr, DRIVER_HANDLE));
+    EXPECT_NO_THROW(delete ptr);
 }
 
-TEST(AX25Adapter, ThrowIfBadDriverHandle)
-{   
-    AX25Adapter* ptr = reinterpret_cast<AX25Adapter*>(0x010203040A0B0C0DULL);
-    void* const DRIVER_HANDLE = reinterpret_cast<void*>(0x10203040A0B0C0D0ULL);
-    KernelMockData::NdisFreeMemoryWithTagPriority_CallCount = 0;
-    
-    // There should be no call to deallocate, and a throw should occur
-    EXPECT_DEATH(ptr->operator delete(ptr, nullptr), "") << "deletion of AX25Adapter with nullptr as driver handle should cause a structured exception";
-    EXPECT_EQ(0, KernelMockData::NdisFreeMemoryWithTagPriority_CallCount);
-}
-
-TEST(AX25Adapter, ValidDeallocation)
+TEST_F(AX25AdapterFixture, ValidDeallocation)
 {
-    AX25Adapter* ptr = reinterpret_cast<AX25Adapter*>(0x010203040A0B0C0DULL);
-    void* const DRIVER_HANDLE = reinterpret_cast<void*>(0x10203040A0B0C0D0ULL);
+    AX25Adapter* ptr = new(DRIVER_HANDLE) AX25Adapter(DRIVER_HANDLE);
     KernelMockData::NdisFreeMemoryWithTagPriority_CallCount = 0;
 
-    EXPECT_NO_THROW(ptr->operator delete(ptr, DRIVER_HANDLE));
+    EXPECT_NO_THROW(delete ptr);
     EXPECT_EQ(1, KernelMockData::NdisFreeMemoryWithTagPriority_CallCount);
     EXPECT_EQ(DRIVER_HANDLE, KernelMockData::NdisFreeMemoryWithTagPriority_Arguments.NdisHandle);
     EXPECT_EQ(ptr, KernelMockData::NdisFreeMemoryWithTagPriority_Arguments.VirtualAddress);
