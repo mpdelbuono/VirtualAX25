@@ -59,6 +59,20 @@ public:
      virtual NDIS_STATUS Pause() noexcept;
 private:
     /**
+     * Represents the current state of this adapter 
+     */
+    enum State
+    {
+        Halted,         //<! Not used, because this object is deallocated while halted
+        Initializing,   //<! State of the adapter while it is being constructed
+        Paused,         //<! Idle state of the adapter where no send/receive operations are possible
+        Restarting,     //<! State of the adapter while it is being transitioned to the Running state
+        Running,        //<! Normal state of the adapter where it is processing send/receive operations
+        Pausing,        //<! State of the adapter while it is completing pending send/receive operations in preparation for pausing
+        Shutdown        //<! Not used, because this object is deallocated while the driver is shut down
+    } state; //<! current state of the adapter
+
+    /**
      * The tag to use when allocating an AX25Adapter object in the non-pageable pool. In memory
      * this should appear as "axAX", little-endian.
      */

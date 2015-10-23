@@ -325,6 +325,6 @@ NDIS_STATUS Miniport::miniportPauseCallback(
     }
 
     AX25Adapter* adapterContext = reinterpret_cast<AX25Adapter*>(miniportAdapterContext);
-    return adapterContext->Pause(activeContext->miniportDriverHandle);
+    return adapterContext->Pause();
 }
 

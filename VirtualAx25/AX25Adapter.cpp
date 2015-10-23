@@ -34,7 +34,8 @@
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 AX25Adapter::AX25Adapter(_In_ NDIS_HANDLE driverHandle) noexcept
-    :currentVlan(0)
+    :state(Initializing)
+    ,currentVlan(0)
     ,currentPacketFilterMode(0)
     ,joinedMulticastGroups{0}
     ,driverHandle(driverHandle)
@@ -97,6 +98,8 @@ AX25Adapter::AX25Adapter(_In_ NDIS_HANDLE driverHandle) noexcept
 
     // Initialize the receive DPC
     KeInitializeDpc(&receiveDpc, &receiveDpcCallback, this);
+
+    state = Paused;
 }
 
 /**
@@ -400,6 +403,7 @@ void AX25Adapter::Destroy() noexcept
  *
  * The state of this adapter after a successful call is either 'Pausing' or 'Paused', and if the state
  * was 'Pausing', then the state is 'Paused' after a call to NdisMPauseComplete.
+ * @param driverHandle the NDIS driver handle with which to perform allocations/deallocations
  * @returns NDIS_STATUS_SUCCESS if the adapter successfully completed pausing and the adapter is in the
  * 'Paused' state, or NDIS_STATUS_PENDING if the adapter is in the 'Pausing' state and a future call to
  * NdisMPauseComplete will be made.
@@ -407,5 +411,7 @@ void AX25Adapter::Destroy() noexcept
 _IRQL_requires_(PASSIVE_LEVEL)
 NDIS_STATUS AX25Adapter::Pause() noexcept
 {
-
+    // TODO: Complete active transmissions
+    state = Paused;
+    return NDIS_STATUS_SUCCESS;
 }
