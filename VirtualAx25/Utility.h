@@ -43,4 +43,4 @@ constexpr unsigned long AX25_CREATE_TAG(char const tag[5])
 #define NON_PAGEABLE_FUNCTION __declspec(code_seg(".text"))
 
 /** Specifies a function that can safely be placed in pageable memory */
-#define PAGEABLE_FUNCTION _IRQL_requires_(PASSIVE_LEVEL) __declspec(code_seg(".page"))
+#define PAGEABLE_FUNCTION _IRQL_requires_(PASSIVE_LEVEL) __declspec(code_seg("PAGE"))
