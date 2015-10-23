@@ -54,6 +54,9 @@ public:
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     virtual void Destroy() noexcept;
+
+    _IRQL_requires_(PASSIVE_LEVEL)
+     virtual NDIS_STATUS Pause() noexcept;
 private:
     /**
      * The tag to use when allocating an AX25Adapter object in the non-pageable pool. In memory

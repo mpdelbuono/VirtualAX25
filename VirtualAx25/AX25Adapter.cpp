@@ -384,3 +384,28 @@ void AX25Adapter::Destroy() noexcept
     this->~AX25Adapter();   // doesn't currently do anything interesting, but called for completeness/futureproofing
     delete this;            // calls to AX25Adapter::operator delete
 }
+
+/**
+ * Pauses this adapter, typically in preparation for a sleep operation. The adapter must:
+ * - Complete all active transmissions
+ * - Stop accepting new IRPs for transmission
+ * - Stop accepting inbound packets
+ *
+ * There is no need for a graceful disconnect of the media, though it may be desirable for some
+ * connectors to be disconnected cleanly. However, no spurious AX.25 packets should be sent
+ * to close an AX.25 connection.
+ * 
+ * If the transmissions cannot be completed immediately, this function can return a status of pending,
+ * indicating that a future call to NdisMPauseComplete will indicate that pausing has been completed.
+ *
+ * The state of this adapter after a successful call is either 'Pausing' or 'Paused', and if the state
+ * was 'Pausing', then the state is 'Paused' after a call to NdisMPauseComplete.
+ * @returns NDIS_STATUS_SUCCESS if the adapter successfully completed pausing and the adapter is in the
+ * 'Paused' state, or NDIS_STATUS_PENDING if the adapter is in the 'Pausing' state and a future call to
+ * NdisMPauseComplete will be made.
+ */
+_IRQL_requires_(PASSIVE_LEVEL)
+NDIS_STATUS AX25Adapter::Pause() noexcept
+{
+
+}

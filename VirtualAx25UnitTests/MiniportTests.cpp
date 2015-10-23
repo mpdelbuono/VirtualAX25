@@ -24,9 +24,12 @@
 #include "pch.h"
 #include "KernelMocks.h"
 #include "AX25AdapterMock.h"
+#include "Miniport.h"
 
 TEST(Miniport, DestroyOnHalt)
 {
     Mocks::AX25Adapter mockAdapter;
-
+    Miniport miniport;
+    EXPECT_CALL(mockAdapter, Destroy());
+    miniport.miniportHaltExCallback(&mockAdapter, NdisHaltDeviceDisabled);
 }

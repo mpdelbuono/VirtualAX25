@@ -20,6 +20,8 @@
 #include "Driver.h"
 #include "Miniport.tmh"
 
+Miniport* Miniport::activeContext = nullptr;
+
 /**
  * Constructs a new Miniport object with an invalid NDIS handle and driver object pointer
  */
@@ -29,6 +31,10 @@ Miniport::Miniport() noexcept
 {
     // Zero out all of the adapters; start with none of them used
     RtlZeroMemory(adapters, sizeof(adapters));
+
+    // assign the activeContext pointer
+    ASSERT(activeContext == nullptr);
+    activeContext = this;
 }
 
 /**
@@ -80,6 +86,36 @@ void * Miniport::operator new(
 }
 
 /**
+ * Destroys this Miniport object by cleaning up its internals. Does not deallocate the memory associated
+ * with this object - that is handled by operator delete
+ */
+Miniport::~Miniport() noexcept
+{
+    // Verify that the activeContext was still set to us. If it wasn't, there's a serious problem because
+    // it likely means two Miniport objects existed at some point in time.
+    if (this != activeContext)
+    {
+        // Log it, but don't clear the active context to try to resolve a possible memory leak
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "Possible memory error detected: Miniport active context is in error (destroying %p, active %p)",
+                    this, activeContext);
+    }
+    else
+    {
+        activeContext = nullptr;
+    }
+
+    // In either case, we will continue with the cleanup
+    for (Adapter& adapter : adapters)
+    {
+        if (adapter.inUse)
+        {
+            adapter.adapter->Destroy();
+            adapter.inUse = false;
+        }
+    }
+}
+
+/**
  * Deallocates this Miniport object, which was allocated via a call to ExAllocatePoolWithTagPriority.
  * If nullptr is passed in, this function acts as a no-op.
  * @param pointer a pointer to a miniport object, or nullptr
@@ -125,7 +161,6 @@ NDIS_STATUS Miniport::RegisterWithNdis(
     characteristics.SetOptionsHandler = nullptr;
 
     // Set the callback functions
-    /*
     characteristics.InitializeHandlerEx = &miniportInitializeExCallback;
     characteristics.HaltHandlerEx = &miniportHaltExCallback;
     characteristics.UnloadHandler = &miniportDriverUnloadCallback;
@@ -140,7 +175,7 @@ NDIS_STATUS Miniport::RegisterWithNdis(
     characteristics.DevicePnPEventNotifyHandler = &miniportDevicePnpEventNotifyCallback;
     characteristics.ShutdownHandlerEx = &miniportShutdownExCallback;
     characteristics.CancelOidRequestHandler = &miniportCancelOidRequestCallback;
-    */
+    
     // Not going to handle direct OID requests
     characteristics.DirectOidRequestHandler = nullptr;
     characteristics.CancelDirectOidRequestHandler = nullptr;
@@ -247,3 +282,49 @@ void Miniport::miniportHaltExCallback(_In_ NDIS_HANDLE miniportAdapterContext,
     AX25Adapter* thisAdapter = reinterpret_cast<AX25Adapter*>(miniportAdapterContext);
     thisAdapter->Destroy();
 }
+
+/**
+ * Unloads and deallocates the specified miniport driver. This callback is called 
+ * whenever the driver is being deallocated due to all devices being removed.
+ */
+_IRQL_requires_(PASSIVE_LEVEL)
+_IRQL_requires_same_
+void Miniport::miniportDriverUnloadCallback(
+    _In_ PDRIVER_OBJECT driverObject) noexcept
+{
+    UNREFERENCED_PARAMETER(driverObject); // not needed for deallocation
+    TraceEvents(TRACE_LEVEL_VERBOSE, TRACE_DRIVER, "Deallocating memory at %p", activeContext);
+    delete activeContext;
+}
+
+/**
+ * Initiates pausing the specified adapter. The adapter should begin transition to the pausing state,
+ * and complete it immediately if possible. If pausing is not complete, then a future call to NdisMPauseComplete
+ * will be made to indicate completion of pausing.
+ * @param miniportAdapterContext the AX25Adapter object that is being paused
+ * @param pauseParameters a parameter passed by NDIS that has no useful information in it whatsoever
+ * @returns NDIS_STATUS_SUCCESS if the adapter was successfully paused, or NDIS_STATUS_PENDING if the adapter
+ * has started pausing and will call NdisMPauseComplete when the adapter completes pausing
+ */
+_IRQL_requires_(PASSIVE_LEVEL)
+_IRQL_requires_same_
+NDIS_STATUS Miniport::miniportPauseCallback(
+    _In_ NDIS_HANDLE miniportAdapterContext,
+    _In_ PNDIS_MINIPORT_PAUSE_PARAMETERS pauseParameters)
+{
+    // This parameter literally has no information in it whatsoever
+    // See <https://msdn.microsoft.com/en-us/library/windows/hardware/ff566473(v=vs.85).aspx>
+    UNREFERENCED_PARAMETER(pauseParameters);
+   
+    // Check the pointer for validity
+    if (miniportAdapterContext == nullptr)
+    {
+        // NDIS passed us something crazy. We could be pretty hosed here, but give NDIS a chance to recover.
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot pause adapter: NDIS passed nullptr context");
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    AX25Adapter* adapterContext = reinterpret_cast<AX25Adapter*>(miniportAdapterContext);
+    return adapterContext->Pause(activeContext->miniportDriverHandle);
+}
+

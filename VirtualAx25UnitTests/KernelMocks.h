@@ -31,6 +31,7 @@
 typedef void* NDIS_HANDLE;
 typedef unsigned long NDIS_STATUS;
 typedef unsigned long NDIS_OID;
+typedef void* PDRIVER_OBJECT;
 
 #pragma region Framework Code
 /**
@@ -267,6 +268,7 @@ enum NET_IF_ACCESS_TYPE { NET_IF_ACCESS_BROADCAST = 2 };
 enum NET_IF_DIRECTION_TYPE { NET_IF_DIRECTION_SENDRECEIVE };
 enum NET_IF_CONNECTION_TYPE { NET_IF_CONNECTION_DEDICATED = 1 };
 enum NET_IFTYPE { IF_TYPE_ETHERNET_CSMACD = 6 };
+enum NDIS_HALT_ACTION { NdisHaltDeviceDisabled };
 
 
 

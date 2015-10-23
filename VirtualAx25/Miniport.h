@@ -21,7 +21,6 @@
  * @author Matthew P. Del Buono (KG7UDH)
  */
 #pragma once
-#include "pch.h"
 #include "AX25Adapter.h"
 
 /**
@@ -34,8 +33,11 @@
  */
 class Miniport
 {
+    // Friendship for unit tests
+    friend class Miniport_DestroyOnHalt_Test;
 public:
     Miniport() noexcept;
+    ~Miniport() noexcept;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
@@ -154,7 +156,7 @@ private:
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
     static void miniportDriverUnloadCallback(
-        _In_ PDRIVER_OBJECT driverObject);
+        _In_ PDRIVER_OBJECT driverObject) noexcept;
 
     #pragma endregion
     #pragma region Miniport Handler Member Functions
@@ -210,6 +212,14 @@ private:
         ('x' << 8 ) |
         ('M' << 16) |
         ('P' << 24);
+
+    /**
+     * The currently active Miniport object that has been allocated. Only one Miniport
+     * object can currently be active at a time, as it represents the global state of the
+     * driver. Preferably this would not be required, but various Miniport functions
+     * do not send along the context, most notably MiniportDriverUnload.
+     */
+    static Miniport* activeContext;
 
 };
 
