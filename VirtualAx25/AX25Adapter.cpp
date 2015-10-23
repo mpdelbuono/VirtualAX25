@@ -498,3 +498,24 @@ void AX25Adapter::SendNetBufferLists(
     UNREFERENCED_PARAMETER(netBufferList);
     UNREFERENCED_PARAMETER(sendFlags);
 }
+
+/**
+ * Returns the specified NET_BUFFER_LIST objects to being owned by this object so that they
+ * can be reused in future receive operations.
+ * @param netBufferLists a linked list of NET_BUFFER_LIST objects that are to be returned to ownership
+ * by this object
+ * @param returnFlags a flag field with bit NDIS_RETURN_FLAGS_DISPATCH_LEVEL set if the current IRQL
+ * is DISPATCH_LEVEL.
+ */
+_When_(returnFlags & NDIS_RETURN_FLAGS_DISPATCH_LEVEL, _IRQL_requires_(DISPATCH_LEVEL))
+_When_(!(returnFlags & NDIS_RETURN_FLAGS_DISPATCH_LEVEL), _IRQL_requires_max_(APC_LEVEL))
+_IRQL_requires_same_
+NON_PAGEABLE_FUNCTION
+void ReturnNetBufferLists(
+    _In_ NET_BUFFER_LIST& netBufferLists,
+    _In_ ULONG returnFlags) noexcept
+{
+    // TODO: Return the net buffer lists
+    UNREFERENCED_PARAMETER(netBufferLists);
+    UNREFERENCED_PARAMETER(returnFlags);
+}

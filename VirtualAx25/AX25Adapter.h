@@ -81,6 +81,14 @@ public:
     void SendNetBufferLists(
         _In_ NET_BUFFER_LIST& netBufferList, 
         _In_ ULONG sendFlags) noexcept;
+
+    _When_(returnFlags & NDIS_RETURN_FLAGS_DISPATCH_LEVEL, _IRQL_requires_(DISPATCH_LEVEL))
+    _When_(!(returnFlags & NDIS_RETURN_FLAGS_DISPATCH_LEVEL), _IRQL_requires_max_(APC_LEVEL))
+    _IRQL_requires_same_
+    NON_PAGEABLE_FUNCTION
+    void ReturnNetBufferLists(
+        _In_ NET_BUFFER_LIST& netBufferLists,
+        _In_ ULONG returnFlags) noexcept;
 private:
     /**
      * Represents the current state of this adapter 

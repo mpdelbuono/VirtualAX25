@@ -42,6 +42,7 @@
   <ItemGroup>
     <ClInclude Include="AX25Adapter.h" />
     <ClInclude Include="Driver.h" />
+    <ClInclude Include="ErrorCodes.h" />
     <ClInclude Include="Miniport.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Public.h" />

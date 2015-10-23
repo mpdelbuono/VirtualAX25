@@ -19,6 +19,7 @@
 #include "Miniport.h"
 #include "Driver.h"
 #include "Miniport.tmh"
+#include "ErrorCodes.h"
 
 Miniport* Miniport::activeContext = nullptr;
 
@@ -455,4 +456,45 @@ void Miniport::miniportSendNetBufferListsCallback(
     // Everything looks good - pass on to the adapter
     AX25Adapter* adapter = reinterpret_cast<AX25Adapter*>(miniportAdapterContext);
     adapter->SendNetBufferLists(*netBufferList, sendFlags);
+}
+
+/**
+ * Returns ownership of the specified NET_BUFFER_LIST structures to this
+ * miniport driver.
+ * @param miniportAdapterContext the AX25Adapter context to which these
+ * NET_BUFFER_LIST objects belong
+ * @param netBufferLists a linked list of NET_BUFFER_LIST objects
+ * which are now owned by the specified AX25Adapter
+ * @param returnFlags a value with NDIS_RETURN_FLAGS_DISPATCH_LEVEL set
+ * if the current IRQL is DISPATCH_LEVEL, or 0 otherwise
+ */
+_Use_decl_annotations_
+NON_PAGEABLE_FUNCTION
+void Miniport::miniportReturnNetBufferListsCallback(
+    _In_ NDIS_HANDLE        miniportAdapterContext,
+    _In_ PNET_BUFFER_LIST   netBufferLists,
+    _In_ ULONG              returnFlags)
+{
+    // Check validity of parameters
+    if (miniportAdapterContext == nullptr)
+    {
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot take ownership of net buffer lists: adapter context is nullptr");
+        
+        // Nothing more we can do. This might leak memory, but we can't do anything about it now. Windows will continue in a degraded state.
+        // (The alternative is to trigger a bluescreen, which seems like an even worse option.)
+        NdisWriteErrorLogEntry(activeContext->miniportDriverHandle, NDIS_ERROR_CODE_DRIVER_FAILURE, 1, static_cast<ULONG>(AX25_CRITICAL_ERROR_NDIS_LEAK_BUFFER_LISTS));
+
+        return;
+    }
+
+    if (netBufferLists == nullptr)
+    {
+        // Nothing to do - there are no net buffer lists to work with
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "Cannot take ownership of net buffer lists: netBufferLists is nullptr");
+        return;
+    }
+
+    // Looks like valid data - pass it off to the adapter
+    AX25Adapter* adapter = reinterpret_cast<AX25Adapter*>(miniportAdapterContext);
+    adapter->ReturnNetBufferLists(*netBufferLists, returnFlags);
 }
