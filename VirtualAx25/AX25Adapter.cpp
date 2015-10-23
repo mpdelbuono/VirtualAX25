@@ -185,30 +185,30 @@ void AX25Adapter::operator delete(_In_opt_ void* pointer)
 
 /**
  * Calls to NDIS to indicate this miniport adapter's attributes
- * @param miniportDriverHandle the driver handle to use when making an NDIS request
  * @returns NDIS_STATUS_SUCCESS if attribute setting was successful, or an error code otherwise
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _Must_inspect_result_
-NDIS_STATUS AX25Adapter::SetMiniportAttributes(_In_ NDIS_HANDLE miniportDriverHandle)
+NDIS_STATUS AX25Adapter::SetMiniportAttributes()
 {
+    ASSERT(driverHandle != nullptr);
     // Validate the driver handle
-    if (miniportDriverHandle == nullptr)
+    if (driverHandle == nullptr)
     {
         // Don't try to call NDIS with a bad pointer - fail out
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_ADAPTER, "Cannot set miniport attributes: driver handle is nullptr");
-        return STATUS_INVALID_PARAMETER_1;
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_ADAPTER, "Cannot set miniport attributes: driver handle is nullptr");
+        return STATUS_INVALID_ADDRESS;
     }
 
     // Call to NDIS - the attributes should already have been set as part of the state of this object
-    NDIS_STATUS status = NdisMSetMiniportAttributes(miniportDriverHandle, registrationAttributes);
+    NDIS_STATUS status = NdisMSetMiniportAttributes(driverHandle, registrationAttributes);
     if (NDIS_STATUS_SUCCESS != status)
     {
         // Something went wrong - report it and give up
         TraceEvents(TRACE_LEVEL_ERROR, TRACE_ADAPTER, "Failed to set miniport adapter registration attributes: %!STATUS!", status);
         return status;
     }
-    status = NdisMSetMiniportAttributes(miniportDriverHandle, generalAttributes);
+    status = NdisMSetMiniportAttributes(driverHandle, generalAttributes);
     if (NDIS_STATUS_SUCCESS != status)
     {
         // Report the error

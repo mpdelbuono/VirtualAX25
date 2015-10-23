@@ -50,13 +50,14 @@ public:
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _Must_inspect_result_
-    NDIS_STATUS SetMiniportAttributes(_In_ NDIS_HANDLE miniportDriverHandle);
+    NDIS_STATUS SetMiniportAttributes();
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     virtual void Destroy() noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
-     virtual NDIS_STATUS Pause() noexcept;
+    _Must_inspect_result_
+    virtual NDIS_STATUS Pause() noexcept;
 private:
     /**
      * Represents the current state of this adapter 

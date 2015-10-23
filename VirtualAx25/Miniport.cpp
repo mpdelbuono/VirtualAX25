@@ -264,7 +264,7 @@ NDIS_STATUS Miniport::miniportInitializeEx(_In_ PNDIS_MINIPORT_INIT_PARAMETERS i
         return NDIS_STATUS_RESOURCES;
     }
 
-    return thisAdapter->adapter->SetMiniportAttributes(miniportDriverHandle);
+    return thisAdapter->adapter->SetMiniportAttributes();
 }
 
 /**
