@@ -36,7 +36,10 @@ class Miniport
     // Friendship for unit tests
     friend class Miniport_DestroyOnHalt_Test;
 public:
+    NON_PAGEABLE_FUNCTION
     Miniport() noexcept;
+
+    NON_PAGEABLE_FUNCTION
     ~Miniport() noexcept;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
@@ -45,16 +48,19 @@ public:
     _Success_(size == sizeof(Miniport))
     _Ret_maybenull_
     _Result_nullonfailure_
+    NON_PAGEABLE_FUNCTION
     void* operator new(
         _In_range_(sizeof(Miniport), sizeof(Miniport)) size_t size) noexcept;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
+    NON_PAGEABLE_FUNCTION
     void operator delete(
          _Inout_updates_bytes_opt_(sizeof(Miniport)) void* pointer) noexcept;
 
     _Must_inspect_result_
     _IRQL_requires_(PASSIVE_LEVEL)
+    PAGEABLE_FUNCTION
     NDIS_STATUS RegisterWithNdis(
         _In_  PDRIVER_OBJECT driverObject,
         _In_  PUNICODE_STRING registryPath) noexcept;
@@ -73,6 +79,7 @@ private:
     #pragma region Miniport Handler Callbacks
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
+    PAGEABLE_FUNCTION
     static NDIS_STATUS miniportInitializeExCallback(
         _In_ NDIS_HANDLE                    ndisMiniportHandle,
         _In_ NDIS_HANDLE                    miniportDriverContext,
@@ -80,57 +87,61 @@ private:
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
+    PAGEABLE_FUNCTION
     static void miniportHaltExCallback(
         _In_ NDIS_HANDLE        miniportAdapterContext,
         _In_ NDIS_HALT_ACTION   haltAction) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
+    PAGEABLE_FUNCTION
     static NDIS_STATUS miniportPauseCallback(
         _In_ NDIS_HANDLE                     miniportAdapterContext,
         _In_ PNDIS_MINIPORT_PAUSE_PARAMETERS miniportPauseParameters) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
+    PAGEABLE_FUNCTION
     static NDIS_STATUS miniportRestartCallback(
         _In_ NDIS_HANDLE                       miniportAdapterContext,
         _In_ PNDIS_MINIPORT_RESTART_PARAMETERS miniportRestartParameters) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
+    PAGEABLE_FUNCTION
     static NDIS_STATUS miniportOidRequestCallback(
         _In_ NDIS_HANDLE            miniportAdapterContext,
         _In_ PNDIS_OID_REQUEST      oidRequest) noexcept;
 
-    _IRQL_requires_max_(DISPATCH_LEVEL)
-    _IRQL_requires_same_
-    static void miniportSendNetBufferListsCallback(
-        _In_ NDIS_HANDLE        miniportAdapterContext,
-        _In_ PNET_BUFFER_LIST   netBufferList,
-        _In_ NDIS_PORT_NUMBER   portNumber,
-        _In_ ULONG              sendFlags) noexcept;
+    NON_PAGEABLE_FUNCTION
+    static MINIPORT_RETURN_NET_BUFFER_LISTS miniportReturnNetBufferListsCallback;
 
-    static MINIPORT_SEND_NET_BUFFER_LISTS miniportReturnNetBufferListsCallback;
+    NON_PAGEABLE_FUNCTION
+    static MINIPORT_SEND_NET_BUFFER_LISTS miniportSendNetBufferListsCallback;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
+    NON_PAGEABLE_FUNCTION
     static void miniportCancelSendCallback(
         _In_ NDIS_HANDLE miniportAdapterContext,
         _In_ PVOID       cancelId) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
+    PAGEABLE_FUNCTION
     static BOOLEAN miniportCheckForHangExCallback(
         _In_ NDIS_HANDLE miniportAdapterContext) noexcept;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
+    NON_PAGEABLE_FUNCTION
     static NDIS_STATUS miniportResetExCallback(
         _In_  NDIS_HANDLE miniportAdapterContext,
         _Out_ PBOOLEAN    addressingReset) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
+    PAGEABLE_FUNCTION
     static void miniportDevicePnpEventNotifyCallback(
         _In_ NDIS_HANDLE            miniportAdapterContext,
         _In_ PNET_DEVICE_PNP_EVENT  netDevicePnpEvent) noexcept;
@@ -138,18 +149,21 @@ private:
     _When_(shutdownAction == NdisShutdownPowerOff, _IRQL_requires_(PASSIVE_LEVEL))
     _When_(shutdownAction == NdisShutdownBugCheck, _IRQL_requires_(HIGH_LEVEL))
     _IRQL_requires_same_
+    NON_PAGEABLE_FUNCTION
     static void miniportShutdownExCallback(
         _In_ NDIS_HANDLE            miniportAdapterContext,
         _In_ NDIS_SHUTDOWN_ACTION   shutdownAction) noexcept;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
+    NON_PAGEABLE_FUNCTION
     static void miniportCancelOidRequestCallback(
         _In_ NDIS_HANDLE miniportAdapterContext,
         _In_ PVOID       requestId) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
+    PAGEABLE_FUNCTION
     static void miniportDriverUnloadCallback(
         _In_ PDRIVER_OBJECT driverObject) noexcept;
 
@@ -157,6 +171,7 @@ private:
     #pragma region Miniport Handler Member Functions
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
+    PAGEABLE_FUNCTION
     NDIS_STATUS miniportInitializeEx(
         _In_ PNDIS_MINIPORT_INIT_PARAMETERS initParameters) noexcept;
     #pragma endregion
@@ -183,6 +198,7 @@ private:
     template <class Function>
     _Ret_maybenull_
     _Must_inspect_result_
+    NON_PAGEABLE_FUNCTION
     inline Adapter* findFirstMatchingAdapter(_In_ Function criterion) noexcept
     {
         for (Adapter& adapter : adapters)

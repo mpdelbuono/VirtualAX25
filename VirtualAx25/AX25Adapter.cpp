@@ -33,6 +33,7 @@
  * and free resources
  */
 _IRQL_requires_(PASSIVE_LEVEL)
+NON_PAGEABLE_FUNCTION
 AX25Adapter::AX25Adapter(_In_ NDIS_HANDLE driverHandle) noexcept
     :state(Initializing)
     ,currentVlan(0)
@@ -115,6 +116,7 @@ _Must_inspect_result_
 _Success_(size == sizeof(AX25Adapter))
 _Ret_maybenull_
 _Result_nullonfailure_
+NON_PAGEABLE_FUNCTION
 void* AX25Adapter::operator new(_In_ size_t size,
                                 _In_ NDIS_HANDLE driverHandle) noexcept
 {   
@@ -162,6 +164,7 @@ void* AX25Adapter::operator new(_In_ size_t size,
  * @throws NTSTATUS STATUS_INVALID_PARAMETER_2 if driverHandle is nullptr
  */
 _IRQL_requires_max_(DISPATCH_LEVEL)
+NON_PAGEABLE_FUNCTION
 void AX25Adapter::operator delete(_In_opt_ void* pointer)
 {
     if (pointer != nullptr)
@@ -189,6 +192,7 @@ void AX25Adapter::operator delete(_In_opt_ void* pointer)
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _Must_inspect_result_
+PAGEABLE_FUNCTION
 NDIS_STATUS AX25Adapter::SetMiniportAttributes()
 {
     ASSERT(driverHandle != nullptr);
@@ -224,6 +228,7 @@ NDIS_STATUS AX25Adapter::SetMiniportAttributes()
  * Initializes the general attributes structure associated with this adapter. This provides general information
  * about the operation of the radio to which this adapter is connected.
  */
+PAGEABLE_FUNCTION
 void AX25Adapter::initializeGeneralAttributes() noexcept
 {
     // Fill out the version information
@@ -332,6 +337,7 @@ void AX25Adapter::initializeGeneralAttributes() noexcept
 /**
  * Initializes the NDIS registration attributes associated with this adapter.
  */
+PAGEABLE_FUNCTION
 void AX25Adapter::initializeRegistrationAttributes() noexcept
 {
     // Set the header
@@ -360,6 +366,7 @@ void AX25Adapter::initializeRegistrationAttributes() noexcept
  * @param adapterContext the context associated with this adapter
  */
 _Use_decl_annotations_
+NON_PAGEABLE_FUNCTION
 void AX25Adapter::receiveDpcCallback(_In_ KDPC* dpc,
                                      _In_opt_ void* adapterContext,
                                      _In_opt_ void* systemArgument1,
@@ -382,6 +389,7 @@ void AX25Adapter::receiveDpcCallback(_In_ KDPC* dpc,
  * points to invalid memory.
  */
 _IRQL_requires_max_(DISPATCH_LEVEL)
+NON_PAGEABLE_FUNCTION
 void AX25Adapter::Destroy() noexcept
 {
     this->~AX25Adapter();   // doesn't currently do anything interesting, but called for completeness/futureproofing
@@ -410,6 +418,7 @@ void AX25Adapter::Destroy() noexcept
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _Must_inspect_result_
+PAGEABLE_FUNCTION
 NDIS_STATUS AX25Adapter::Pause() noexcept
 {
     // TODO: Complete active transmissions
@@ -424,11 +433,13 @@ NDIS_STATUS AX25Adapter::Pause() noexcept
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _Must_inspect_result_
+PAGEABLE_FUNCTION
 NDIS_STATUS AX25Adapter::Restart(const NDIS_MINIPORT_RESTART_PARAMETERS& restartParameters) noexcept
 {
+    UNREFERENCED_PARAMETER(restartParameters);
     // TODO: Connect to connector as appropriate
     state = Running;
-    return NDIS_STATUS_SUCCESS
+    return NDIS_STATUS_SUCCESS;
 }
 
 /**
@@ -447,6 +458,7 @@ NDIS_STATUS AX25Adapter::Restart(const NDIS_MINIPORT_RESTART_PARAMETERS& restart
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _Must_inspect_result_
+PAGEABLE_FUNCTION
 NDIS_STATUS AX25Adapter::HandleOidRequest(_In_ NDIS_OID_REQUEST& oidRequest) noexcept
 {
     // Check to make sure we're in a valid state
@@ -457,6 +469,8 @@ NDIS_STATUS AX25Adapter::HandleOidRequest(_In_ NDIS_OID_REQUEST& oidRequest) noe
     }
 
     // TODO: Handle OID requests
+    UNREFERENCED_PARAMETER(oidRequest);
+    return STATUS_NOT_IMPLEMENTED;
 }
 
 /**
@@ -473,11 +487,14 @@ NDIS_STATUS AX25Adapter::HandleOidRequest(_In_ NDIS_OID_REQUEST& oidRequest) noe
  * IRQL is DISPATCH_LEVEL.
  */
 _When_(sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL, _IRQL_requires_(DISPATCH_LEVEL))
-_When_(!(sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL), _IRQL_requires_max(APC_LEVEL))
+_When_(!(sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL), _IRQL_requires_max_(APC_LEVEL))
 _IRQL_requires_same_
+NON_PAGEABLE_FUNCTION
 void AX25Adapter::SendNetBufferLists(
     _In_ NET_BUFFER_LIST& netBufferList, 
     _In_ ULONG sendFlags) noexcept
 {
    // TODO: Enqueue the data 
+    UNREFERENCED_PARAMETER(netBufferList);
+    UNREFERENCED_PARAMETER(sendFlags);
 }

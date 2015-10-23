@@ -25,6 +25,7 @@ Miniport* Miniport::activeContext = nullptr;
 /**
  * Constructs a new Miniport object with an invalid NDIS handle and driver object pointer
  */
+NON_PAGEABLE_FUNCTION
 Miniport::Miniport() noexcept 
     :miniportDriverHandle(NULL)
     ,driverObject(NULL)
@@ -52,6 +53,7 @@ _Must_inspect_result_
 _Success_(size == sizeof(Miniport))
 _Ret_maybenull_
 _Result_nullonfailure_
+NON_PAGEABLE_FUNCTION
 void * Miniport::operator new(
     _In_range_(sizeof(Miniport), sizeof(Miniport)) size_t size) noexcept
 {
@@ -89,6 +91,7 @@ void * Miniport::operator new(
  * Destroys this Miniport object by cleaning up its internals. Does not deallocate the memory associated
  * with this object - that is handled by operator delete
  */
+NON_PAGEABLE_FUNCTION
 Miniport::~Miniport() noexcept
 {
     // Verify that the activeContext was still set to us. If it wasn't, there's a serious problem because
@@ -122,6 +125,7 @@ Miniport::~Miniport() noexcept
  */
 _IRQL_requires_max_(DISPATCH_LEVEL)
 _IRQL_requires_same_
+NON_PAGEABLE_FUNCTION
 void Miniport::operator delete(
     _Inout_updates_bytes_opt_(sizeof(Miniport)) void* pointer) noexcept
 {
@@ -142,6 +146,7 @@ void Miniport::operator delete(
  */
 _Must_inspect_result_
 _IRQL_requires_(PASSIVE_LEVEL)
+PAGEABLE_FUNCTION
 NDIS_STATUS Miniport::RegisterWithNdis(
     _In_  PDRIVER_OBJECT object,
     _In_  PUNICODE_STRING registryPath) noexcept
@@ -208,6 +213,7 @@ NDIS_STATUS Miniport::RegisterWithNdis(
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_ 
+PAGEABLE_FUNCTION
 NDIS_STATUS Miniport::miniportInitializeExCallback(_In_ NDIS_HANDLE ndisMiniportHandle, 
                                                    _In_ NDIS_HANDLE miniportDriverContext, 
                                                    _In_ PNDIS_MINIPORT_INIT_PARAMETERS miniportInitParameters) noexcept
@@ -238,6 +244,7 @@ NDIS_STATUS Miniport::miniportInitializeExCallback(_In_ NDIS_HANDLE ndisMiniport
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_
+PAGEABLE_FUNCTION
 NDIS_STATUS Miniport::miniportInitializeEx(_In_ PNDIS_MINIPORT_INIT_PARAMETERS initParameters) noexcept
 {
     // Figure out where we're going to store the new adapter
@@ -275,6 +282,7 @@ NDIS_STATUS Miniport::miniportInitializeEx(_In_ PNDIS_MINIPORT_INIT_PARAMETERS i
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_
+PAGEABLE_FUNCTION
 void Miniport::miniportHaltExCallback(_In_ NDIS_HANDLE miniportAdapterContext,
                                       _In_ NDIS_HALT_ACTION haltAction) noexcept
 {
@@ -289,6 +297,7 @@ void Miniport::miniportHaltExCallback(_In_ NDIS_HANDLE miniportAdapterContext,
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_
+PAGEABLE_FUNCTION
 void Miniport::miniportDriverUnloadCallback(
     _In_ PDRIVER_OBJECT driverObject) noexcept
 {
@@ -308,6 +317,7 @@ void Miniport::miniportDriverUnloadCallback(
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_
+PAGEABLE_FUNCTION
 NDIS_STATUS Miniport::miniportPauseCallback(
     _In_ NDIS_HANDLE miniportAdapterContext,
     _In_ PNDIS_MINIPORT_PAUSE_PARAMETERS pauseParameters) noexcept
@@ -338,6 +348,7 @@ NDIS_STATUS Miniport::miniportPauseCallback(
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_
+PAGEABLE_FUNCTION
 NDIS_STATUS Miniport::miniportRestartCallback(
     _In_ NDIS_HANDLE                        miniportAdapterContext,
     _In_ PNDIS_MINIPORT_RESTART_PARAMETERS  miniportRestartParameters) noexcept
@@ -378,6 +389,7 @@ NDIS_STATUS Miniport::miniportRestartCallback(
  */
 _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_
+PAGEABLE_FUNCTION
 NDIS_STATUS Miniport::miniportOidRequestCallback(
     _In_ NDIS_HANDLE        miniportAdapterContext,
     _In_ PNDIS_OID_REQUEST  oidRequest) noexcept
@@ -412,6 +424,7 @@ NDIS_STATUS Miniport::miniportOidRequestCallback(
  * NDIS_SEND_FLAGS_CHECK_FOR_LOOPBACK if this adapter needs to check to see if this data should loop back
  */
 _Use_decl_annotations_
+NON_PAGEABLE_FUNCTION
 void Miniport::miniportSendNetBufferListsCallback(
     _In_ NDIS_HANDLE        miniportAdapterContext,
     _In_ PNET_BUFFER_LIST   netBufferList,
@@ -427,7 +440,7 @@ void Miniport::miniportSendNetBufferListsCallback(
 
         // Cancel the request by immediately calling NdisMSendNetBufferListComplete
         markNetBufferListWithFailure(netBufferList, NDIS_STATUS_FAILURE);
-        NdisMSendNetBufferListsComplete(miniportDriverHandle, netBufferList, 
+        NdisMSendNetBufferListsComplete(activeContext->miniportDriverHandle, netBufferList, 
                                         (sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL) ? NDIS_SEND_COMPLETE_FLAGS_DISPATCH_LEVEL : 0);
         return;
     }
@@ -441,5 +454,5 @@ void Miniport::miniportSendNetBufferListsCallback(
 
     // Everything looks good - pass on to the adapter
     AX25Adapter* adapter = reinterpret_cast<AX25Adapter*>(miniportAdapterContext);
-    adapter->SendNetBufferLists(*netBufferList, sendFlags)
+    adapter->SendNetBufferLists(*netBufferList, sendFlags);
 }

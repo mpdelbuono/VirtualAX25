@@ -42,34 +42,42 @@ public:
     _Success_(size == sizeof(AX25Adapter))
     _Ret_maybenull_
     _Result_nullonfailure_
+    NON_PAGEABLE_FUNCTION
     void* operator new(_In_ size_t size,
                        _In_ NDIS_HANDLE driverHandle) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
+    NON_PAGEABLE_FUNCTION
     AX25Adapter(_In_ NDIS_HANDLE driverHandle) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _Must_inspect_result_
+    PAGEABLE_FUNCTION
     NDIS_STATUS SetMiniportAttributes();
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
+    NON_PAGEABLE_FUNCTION
     virtual void Destroy() noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _Must_inspect_result_
+    PAGEABLE_FUNCTION
     virtual NDIS_STATUS Pause() noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _Must_inspect_result_
+    PAGEABLE_FUNCTION
     virtual NDIS_STATUS Restart(_In_ const NDIS_MINIPORT_RESTART_PARAMETERS& restartParameters) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _Must_inspect_result_
+    PAGEABLE_FUNCTION 
     virtual NDIS_STATUS HandleOidRequest(_In_ NDIS_OID_REQUEST& oidRequest) noexcept;
 
-    _When_(sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL, _IRQL_requires_(DISPATCH_LEVEL))
-    _When_(!(sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL), _IRQL_requires_max(APC_LEVEL))
+    _When_((sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL), _IRQL_requires_(DISPATCH_LEVEL))
+    _When_((!(sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL)), _IRQL_requires_max_(APC_LEVEL))
     _IRQL_requires_same_
+    NON_PAGEABLE_FUNCTION
     void SendNetBufferLists(
         _In_ NET_BUFFER_LIST& netBufferList, 
         _In_ ULONG sendFlags) noexcept;
@@ -175,7 +183,9 @@ private:
     class AdapterAttributes
     {
     public:
+        NON_PAGEABLE_FUNCTION
         inline T* operator->() noexcept { return &(attributes.*Member); }
+        NON_PAGEABLE_FUNCTION
         inline operator NDIS_MINIPORT_ADAPTER_ATTRIBUTES*() noexcept { return &attributes; }
     private:
         NDIS_MINIPORT_ADAPTER_ATTRIBUTES attributes;
@@ -195,7 +205,10 @@ private:
      */
     AdapterAttributes<NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES, &NDIS_MINIPORT_ADAPTER_ATTRIBUTES::RegistrationAttributes> registrationAttributes;
 
+    PAGEABLE_FUNCTION
     void initializeGeneralAttributes() noexcept;
+
+    PAGEABLE_FUNCTION
     void initializeRegistrationAttributes() noexcept;
 
     /**
@@ -204,7 +217,7 @@ private:
      */
     KDPC receiveDpc;
 
-
+    NON_PAGEABLE_FUNCTION 
     static KDEFERRED_ROUTINE receiveDpcCallback;
 
 
@@ -215,6 +228,7 @@ private:
     const NDIS_HANDLE driverHandle;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
+    NON_PAGEABLE_FUNCTION
     void operator delete(_In_opt_ void* pointer) noexcept;
 
 };
