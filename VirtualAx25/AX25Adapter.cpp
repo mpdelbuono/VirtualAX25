@@ -409,9 +409,75 @@ void AX25Adapter::Destroy() noexcept
  * NdisMPauseComplete will be made.
  */
 _IRQL_requires_(PASSIVE_LEVEL)
+_Must_inspect_result_
 NDIS_STATUS AX25Adapter::Pause() noexcept
 {
     // TODO: Complete active transmissions
     state = Paused;
     return NDIS_STATUS_SUCCESS;
+}
+
+
+/**
+ * Restarts this adapter, shifting it back into the running state. After this function is called,
+ * the adapter is ready to again receive and transmit packets.
+ */
+_IRQL_requires_(PASSIVE_LEVEL)
+_Must_inspect_result_
+NDIS_STATUS AX25Adapter::Restart(const NDIS_MINIPORT_RESTART_PARAMETERS& restartParameters) noexcept
+{
+    // TODO: Connect to connector as appropriate
+    state = Running;
+    return NDIS_STATUS_SUCCESS
+}
+
+/**
+ * Handles an OID request to query or set information for this adapter. The OID request
+ * specifies the behavior expected.
+ * @param oidRequest the request to enact. Depending on the request, this parameter may also
+ * be used to provide information back to the requestor.
+ * @returns NDIS_STATUS_INVALID_OID if the OID was not recognized
+ * @returns NDIS_STATUS_NOT_SUPPORTED if the OID was recognized, but not supported by this driver
+ * @returns NDIS_STATUS_BUFFER_TOO_SHORT if the request cannot fit in the buffer supplied by the 
+ * request
+ * @returns NDIS_STATUS_NOT_ACCEPTED if the adapter is in the Halted state
+ * @returns NDIS_STATUS_PENDING if the request was accepted, and is in progress. A future call
+ * to NdisMOidRequestComplete will be made when the request is complete
+ * @returns NDIS_STATUS_SUCCESS if the OID request was completed in its entirety
+ */
+_IRQL_requires_(PASSIVE_LEVEL)
+_Must_inspect_result_
+NDIS_STATUS AX25Adapter::HandleOidRequest(_In_ NDIS_OID_REQUEST& oidRequest) noexcept
+{
+    // Check to make sure we're in a valid state
+    if (state == Halted)
+    {
+        TraceEvents(TRACE_LEVEL_WARNING, TRACE_ADAPTER, "OID request not accepted: adapter is halted");
+        return NDIS_STATUS_NOT_ACCEPTED;
+    }
+
+    // TODO: Handle OID requests
+}
+
+/**
+ * Sends the given network data along this adapter. This adapter must be in the running state or the request
+ * will be rejected. This function may return before the data has been transmitted. After completion 
+ * (whether success or failure), NdisMSendNetBufferListsComplete will be called. Until NdisMSendNetBufferListsComplete
+ * is called, this adapter owns the netBufferList object provided. After NdisMSendNetBufferListsComplete is called,
+ * ownership is released and the memory is treated as inaccessible. Note that a call to NdisMSendNetBufferListsComplete
+ * does not necessarily mean the data has been transmitted, but rather that it has at least been queued for transmission
+ * and the buffer is no longer needed.
+ * @param netBufferList a linked list of NET_BUFFER_LIST objects indicating the data to be transmitted, in order
+ * @param sendFlags the flags associted with this send operation. If NDIS_SEND_FLAGS_CHECK_FOR_LOOPBACK is set, then
+ * this function will check to see if the data should loop back. If NDIS_SEND_FLAGS_DISPATCH_LEVEL is set, then the current
+ * IRQL is DISPATCH_LEVEL.
+ */
+_When_(sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL, _IRQL_requires_(DISPATCH_LEVEL))
+_When_(!(sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL), _IRQL_requires_max(APC_LEVEL))
+_IRQL_requires_same_
+void AX25Adapter::SendNetBufferLists(
+    _In_ NET_BUFFER_LIST& netBufferList, 
+    _In_ ULONG sendFlags) noexcept
+{
+   // TODO: Enqueue the data 
 }

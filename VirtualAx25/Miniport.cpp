@@ -310,7 +310,7 @@ _IRQL_requires_(PASSIVE_LEVEL)
 _IRQL_requires_same_
 NDIS_STATUS Miniport::miniportPauseCallback(
     _In_ NDIS_HANDLE miniportAdapterContext,
-    _In_ PNDIS_MINIPORT_PAUSE_PARAMETERS pauseParameters)
+    _In_ PNDIS_MINIPORT_PAUSE_PARAMETERS pauseParameters) noexcept
 {
     // This parameter literally has no information in it whatsoever
     // See <https://msdn.microsoft.com/en-us/library/windows/hardware/ff566473(v=vs.85).aspx>
@@ -328,3 +328,118 @@ NDIS_STATUS Miniport::miniportPauseCallback(
     return adapterContext->Pause();
 }
 
+/**
+ * Handles a request to restart the specified adapter. 
+ * @param miniportAdapterContext a pointer to the AX25Adapter context which is being restarted
+ * @param miniportRestartParameters the restart parameters for the adapter
+ * @returns NDIS_STATUS_SUCCESS if the adapter restarted successfully, or NDIS_STATUS_PENDING
+ * if the adapter has started restarting and will call NdisMRestartComplete when the restart 
+ * operation has completed, or an error code otherwise
+ */
+_IRQL_requires_(PASSIVE_LEVEL)
+_IRQL_requires_same_
+NDIS_STATUS Miniport::miniportRestartCallback(
+    _In_ NDIS_HANDLE                        miniportAdapterContext,
+    _In_ PNDIS_MINIPORT_RESTART_PARAMETERS  miniportRestartParameters) noexcept
+{
+    // Check validity
+    if (miniportAdapterContext == nullptr)
+    {
+        // NDIS passed us something crazy. We could be pretty hosed here, but give NDIS a chance to recover.
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot restart adapter: NDIS passed nullptr context");
+        return STATUS_INVALID_PARAMETER_1;
+    }
+
+    if (miniportRestartParameters == nullptr)
+    {
+        // Same thing - report error because this doesn't make sense
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot restart adapter: NDIS passed nullptr restart parameters");
+        return STATUS_INVALID_PARAMETER_2;
+    }
+
+    AX25Adapter* adapterContext = reinterpret_cast<AX25Adapter*>(miniportAdapterContext);
+    return adapterContext->Restart(*miniportRestartParameters);
+}
+
+/**
+ * Handles an OID request to query or set information for this adapter. The OID request
+ * specifies the behavior expected.
+ * @param miniportAdapterContext the AX25Adapter context on which the OID query or request is occurring
+ * @param oidRequest a pointer to the request to enact. Depending on the request, this parameter may also
+ * be used to provide information back to the requestor.
+ * @returns NDIS_STATUS_INVALID_OID if the OID was not recognized
+ * @returns NDIS_STATUS_NOT_SUPPORTED if the OID was recognized, but not supported by this driver
+ * @returns NDIS_STATUS_BUFFER_TOO_SHORT if the request cannot fit in the buffer supplied by the
+ * request
+ * @returns NDIS_STATUS_NOT_ACCEPTED if the adapter is in the Halted state
+ * @returns NDIS_STATUS_PENDING if the request was accepted, and is in progress. A future call
+ * to NdisMOidRequestComplete will be made when the request is complete
+ * @returns NDIS_STATUS_SUCCESS if the OID request was completed in its entirety
+ */
+_IRQL_requires_(PASSIVE_LEVEL)
+_IRQL_requires_same_
+NDIS_STATUS Miniport::miniportOidRequestCallback(
+    _In_ NDIS_HANDLE        miniportAdapterContext,
+    _In_ PNDIS_OID_REQUEST  oidRequest) noexcept
+{
+    // Verify that the pointers are valid
+    if (miniportAdapterContext == nullptr)
+    {
+        // We got fed a bad context - spit an error back to NDIS
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot handle OID request: NDIS passed nullptr context");
+        return STATUS_INVALID_PARAMETER_1;
+    }
+
+    if (oidRequest == nullptr)
+    {
+        // We got given a bad OID request - spit an error back to NDIS
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot handle OID request: NDIS passed nullptr OIDR");
+        return STATUS_INVALID_PARAMETER_2;
+    }
+
+    AX25Adapter* adapterContext = reinterpret_cast<AX25Adapter*>(miniportAdapterContext);
+    return adapterContext->HandleOidRequest(*oidRequest);
+}
+
+/**
+ * Handles a request from NDIS to transmit the specified network data. Upon completion of transmission,
+ * the NdisMSendNetBufferListComplete function is called to free the buffer list passed to this miniport.
+ * @param miniportAdapterContext the AX25Adapter context with which to send the data
+ * @param netBufferList a linked list of NET_BUFFER_LIST objects which represent the network data to transmit,
+ * in the order of transmission to be used
+ * @param portNumber not used - expects 0
+ * @param sendFlags a bitfield with NDIS_SEND_FLAGS_DISPATCH_LEVEL set if the current IRQL is DISPATCH_LEVEL, and
+ * NDIS_SEND_FLAGS_CHECK_FOR_LOOPBACK if this adapter needs to check to see if this data should loop back
+ */
+_Use_decl_annotations_
+void Miniport::miniportSendNetBufferListsCallback(
+    _In_ NDIS_HANDLE        miniportAdapterContext,
+    _In_ PNET_BUFFER_LIST   netBufferList,
+    _In_ NDIS_PORT_NUMBER   portNumber,
+    _In_ ULONG              sendFlags) 
+{
+    UNREFERENCED_PARAMETER(portNumber);
+
+    // Check validity
+    if (miniportAdapterContext == nullptr)
+    {
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot send net buffer lists: adapter context is nullptr");
+
+        // Cancel the request by immediately calling NdisMSendNetBufferListComplete
+        markNetBufferListWithFailure(netBufferList, NDIS_STATUS_FAILURE);
+        NdisMSendNetBufferListsComplete(miniportDriverHandle, netBufferList, 
+                                        (sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL) ? NDIS_SEND_COMPLETE_FLAGS_DISPATCH_LEVEL : 0);
+        return;
+    }
+
+    if (netBufferList == nullptr)
+    {
+        // Nothing to do - there's no list here
+        TraceEvents(TRACE_LEVEL_CRITICAL, TRACE_DRIVER, "Cannot send net buffer lists: net buffer list is nullptr");
+        return;
+    }
+
+    // Everything looks good - pass on to the adapter
+    AX25Adapter* adapter = reinterpret_cast<AX25Adapter*>(miniportAdapterContext);
+    adapter->SendNetBufferLists(*netBufferList, sendFlags)
+}

@@ -58,6 +58,21 @@ public:
     _IRQL_requires_(PASSIVE_LEVEL)
     _Must_inspect_result_
     virtual NDIS_STATUS Pause() noexcept;
+
+    _IRQL_requires_(PASSIVE_LEVEL)
+    _Must_inspect_result_
+    virtual NDIS_STATUS Restart(_In_ const NDIS_MINIPORT_RESTART_PARAMETERS& restartParameters) noexcept;
+
+    _IRQL_requires_(PASSIVE_LEVEL)
+    _Must_inspect_result_
+    virtual NDIS_STATUS HandleOidRequest(_In_ NDIS_OID_REQUEST& oidRequest) noexcept;
+
+    _When_(sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL, _IRQL_requires_(DISPATCH_LEVEL))
+    _When_(!(sendFlags & NDIS_SEND_FLAGS_DISPATCH_LEVEL), _IRQL_requires_max(APC_LEVEL))
+    _IRQL_requires_same_
+    void SendNetBufferLists(
+        _In_ NET_BUFFER_LIST& netBufferList, 
+        _In_ ULONG sendFlags) noexcept;
 private:
     /**
      * Represents the current state of this adapter 

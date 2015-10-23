@@ -88,19 +88,19 @@ private:
     _IRQL_requires_same_
     static NDIS_STATUS miniportPauseCallback(
         _In_ NDIS_HANDLE                     miniportAdapterContext,
-        _In_ PNDIS_MINIPORT_PAUSE_PARAMETERS miniportPauseParameters);
+        _In_ PNDIS_MINIPORT_PAUSE_PARAMETERS miniportPauseParameters) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
     static NDIS_STATUS miniportRestartCallback(
         _In_ NDIS_HANDLE                       miniportAdapterContext,
-        _In_ PNDIS_MINIPORT_RESTART_PARAMETERS miniportRestartParameters);
+        _In_ PNDIS_MINIPORT_RESTART_PARAMETERS miniportRestartParameters) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
     static NDIS_STATUS miniportOidRequestCallback(
         _In_ NDIS_HANDLE            miniportAdapterContext,
-        _In_ PNDIS_OID_REQUEST      oidRequest);
+        _In_ PNDIS_OID_REQUEST      oidRequest) noexcept;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
@@ -108,50 +108,45 @@ private:
         _In_ NDIS_HANDLE        miniportAdapterContext,
         _In_ PNET_BUFFER_LIST   netBufferList,
         _In_ NDIS_PORT_NUMBER   portNumber,
-        _In_ ULONG              sendFlags);
+        _In_ ULONG              sendFlags) noexcept;
 
-    _IRQL_requires_max_(DISPATCH_LEVEL)
-    _IRQL_requires_same_
-    static void miniportReturnNetBufferListsCallback(
-        _In_ NDIS_HANDLE        miniportAdapterContext,
-        _In_ PNET_BUFFER_LIST   netBufferLists,
-        _In_ ULONG              returnFlags);
+    static MINIPORT_SEND_NET_BUFFER_LISTS miniportReturnNetBufferListsCallback;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
     static void miniportCancelSendCallback(
         _In_ NDIS_HANDLE miniportAdapterContext,
-        _In_ PVOID       cancelId);
+        _In_ PVOID       cancelId) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
     static BOOLEAN miniportCheckForHangExCallback(
-        _In_ NDIS_HANDLE miniportAdapterContext);
+        _In_ NDIS_HANDLE miniportAdapterContext) noexcept;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
     static NDIS_STATUS miniportResetExCallback(
         _In_  NDIS_HANDLE miniportAdapterContext,
-        _Out_ PBOOLEAN    addressingReset);
+        _Out_ PBOOLEAN    addressingReset) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
     static void miniportDevicePnpEventNotifyCallback(
         _In_ NDIS_HANDLE            miniportAdapterContext,
-        _In_ PNET_DEVICE_PNP_EVENT  netDevicePnpEvent);
+        _In_ PNET_DEVICE_PNP_EVENT  netDevicePnpEvent) noexcept;
 
     _When_(shutdownAction == NdisShutdownPowerOff, _IRQL_requires_(PASSIVE_LEVEL))
     _When_(shutdownAction == NdisShutdownBugCheck, _IRQL_requires_(HIGH_LEVEL))
     _IRQL_requires_same_
     static void miniportShutdownExCallback(
         _In_ NDIS_HANDLE            miniportAdapterContext,
-        _In_ NDIS_SHUTDOWN_ACTION   shutdownAction);
+        _In_ NDIS_SHUTDOWN_ACTION   shutdownAction) noexcept;
 
     _IRQL_requires_max_(DISPATCH_LEVEL)
     _IRQL_requires_same_
     static void miniportCancelOidRequestCallback(
         _In_ NDIS_HANDLE miniportAdapterContext,
-        _In_ PVOID       requestId);
+        _In_ PVOID       requestId) noexcept;
 
     _IRQL_requires_(PASSIVE_LEVEL)
     _IRQL_requires_same_
